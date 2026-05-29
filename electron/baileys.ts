@@ -8,7 +8,7 @@ import {
 } from '@whiskeysockets/baileys'
 import { BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
-import { rmSync } from 'fs'
+import { rmSync, existsSync, mkdirSync, writeFileSync } from 'fs'
 import { eq } from 'drizzle-orm'
 import * as schema from '../src/server/db/schema'
 import { userData } from './main'
@@ -98,6 +98,7 @@ async function connect(db: BetterSQLite3Database<typeof schema>, win: BrowserWin
 
   sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
     if (qr) {
+      console.log('[baileys] QR code generated — waiting for phone to scan')
       win.webContents.send('wa:qr', qr)
       setStatus(win, 'connecting')
     }
@@ -105,8 +106,9 @@ async function connect(db: BetterSQLite3Database<typeof schema>, win: BrowserWin
     if (connection === 'open') {
       reconnectAttempts = 0
       setStatus(win, 'connected')
-      // Hydrate group names and contact names after connection
+      // Hydrate group names then profile pictures (staggered to avoid rate limits)
       setTimeout(() => hydrateContactNames(db, win), 3000)
+      setTimeout(() => fetchProfilePictures(db, win), 6000)
     }
 
     if (connection === 'close') {
@@ -278,6 +280,45 @@ async function connect(db: BetterSQLite3Database<typeof schema>, win: BrowserWin
       win.webContents.send('wa:historySynced', null)
     }
   })
+}
+
+// ── Fetch and cache WA profile pictures ───────────────────────────────────────
+async function fetchProfilePictures(
+  db: BetterSQLite3Database<typeof schema>,
+  win: BrowserWindow
+) {
+  if (!sock) return
+  const avatarDir = join(userData, 'avatars')
+  if (!existsSync(avatarDir)) mkdirSync(avatarDir, { recursive: true })
+
+  const contacts = db.select().from(schema.contacts).all()
+  let fetched = 0
+
+  for (const contact of contacts) {
+    const avatarFile = join(avatarDir, `${contact.id}.jpg`)
+    if (existsSync(avatarFile)) continue  // already cached
+
+    // Rate-limit: 600ms between requests
+    if (fetched > 0) await new Promise(r => setTimeout(r, 600))
+
+    try {
+      const url = await sock.profilePictureUrl(contact.whatsappId, 'image')
+      const res = await fetch(url)
+      if (res.ok) {
+        const buf = await res.arrayBuffer()
+        writeFileSync(avatarFile, Buffer.from(buf))
+        fetched++
+        console.log(`[baileys] cached avatar for contact ${contact.id}`)
+      }
+    } catch {
+      // Contact has no profile picture — create empty marker to avoid re-fetching
+      // (leave file absent; will retry on next launch)
+    }
+  }
+
+  if (fetched > 0) {
+    win.webContents.send('wa:historySynced', null)
+  }
 }
 
 // ── Hydrate names for existing contacts after connection ───────────────────────

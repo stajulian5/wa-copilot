@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Notification, nativeTheme } from 'electron'
+import { app, BrowserWindow, ipcMain, Notification, nativeTheme, Menu } from 'electron'
 
 app.setName('WhatsApp Copilot')
 // Pin userData to a stable path so re-naming the app never loses data
@@ -69,10 +69,32 @@ app.whenReady().then(async () => {
     // Electron handles this via Notification.isSupported()
   }
 
-  const port = await startServer(db)
+  const port = await startServer(db, userData)
 
   // Respond synchronously to preload's port request
   ipcMain.on('server:port-sync', (e) => { e.returnValue = port })
+
+  // Set custom menu so macOS menu bar shows "WhatsApp Copilot" instead of "Electron"
+  const appMenu = Menu.buildFromTemplate([
+    {
+      label: app.getName(),
+      submenu: [
+        { role: 'about' as const },
+        { type: 'separator' as const },
+        { role: 'services' as const },
+        { type: 'separator' as const },
+        { role: 'hide' as const },
+        { role: 'hideOthers' as const },
+        { role: 'unhide' as const },
+        { type: 'separator' as const },
+        { role: 'quit' as const }
+      ]
+    },
+    { role: 'editMenu' as const },
+    { role: 'viewMenu' as const },
+    { role: 'windowMenu' as const }
+  ])
+  Menu.setApplicationMenu(appMenu)
 
   createWindow()
   await startBaileys(db, mainWindow!, port)

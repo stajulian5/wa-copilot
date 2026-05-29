@@ -30,12 +30,12 @@ export function KanbanColumn({ stage, label, contacts, onSelectContact }: Props)
         </div>
       </div>
 
-      {/* Drop zone */}
+      {/* Drop zone — list style like WA */}
       <div
         ref={setNodeRef}
-        className={`flex-1 flex flex-col gap-2 overflow-y-auto rounded-xl p-1.5 transition-colors min-h-[200px] ${
-          isOver ? 'bg-blue-50 ring-2 ring-blue-300' : 'bg-gray-200/60'
-        }`}
+        className={`flex-1 overflow-y-auto rounded-xl transition-colors min-h-[200px] ${
+          isOver ? 'ring-2 ring-blue-300 ring-inset' : ''
+        } bg-white shadow-sm`}
       >
         <SortableContext
           items={contacts.map(c => String(c.id))}
@@ -51,8 +51,8 @@ export function KanbanColumn({ stage, label, contacts, onSelectContact }: Props)
         </SortableContext>
 
         {contacts.length === 0 && (
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-xs text-gray-400">Sin contactos</p>
+          <div className="flex-1 flex items-center justify-center py-12">
+            <p className="text-xs text-gray-300">Sin contactos</p>
           </div>
         )}
       </div>

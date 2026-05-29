@@ -20,8 +20,9 @@ interface Props {
 }
 
 export function KanbanPage({ waStatus, onOpenSettings }: Props) {
-  const { selectedContactId, setSelectedContactId, updateContact, getByStage } = useContactsStore()
+  const { selectedContactId, setSelectedContactId, updateContact, getByStage, contacts } = useContactsStore()
   const [showBriefing, setShowBriefing] = useState(false)
+  const [showSyncBanner, setShowSyncBanner] = useState(() => !localStorage.getItem('sync_banner_dismissed'))
   const searchRef = useRef<HTMLInputElement>(null)
 
   // Show daily briefing once per day
@@ -88,6 +89,28 @@ export function KanbanPage({ waStatus, onOpenSettings }: Props) {
       />
 
       {showBriefing && <DailyBriefing onClose={() => setShowBriefing(false)} />}
+
+      {/* Sync banner: shown when few contacts, prompting full history import */}
+      {showSyncBanner && contacts.length < 10 && waStatus === 'connected' && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-[#054640] text-white text-sm">
+          <span className="text-lg">💬</span>
+          <span className="flex-1 text-[13px]">
+            Importa <strong>todas</strong> tus conversaciones: ve a <strong>Configuración → Volver a vincular</strong> y escanea el código QR desde WhatsApp en tu teléfono.
+          </span>
+          <button
+            onClick={() => onOpenSettings()}
+            className="bg-[#25D366] hover:bg-[#1da851] text-white text-xs font-semibold px-3 py-1.5 rounded-full transition-colors shrink-0"
+          >
+            Configuración
+          </button>
+          <button
+            onClick={() => { setShowSyncBanner(false); localStorage.setItem('sync_banner_dismissed', '1') }}
+            className="text-white/60 hover:text-white text-lg leading-none shrink-0"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <div className="flex flex-1 gap-3 p-3 overflow-hidden">

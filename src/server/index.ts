@@ -1,6 +1,8 @@
 import express from 'express'
 import { createServer } from 'http'
 import { ipcMain } from 'electron'
+import { existsSync, readFileSync } from 'fs'
+import { join } from 'path'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import * as schema from './db/schema'
 import { contactsRouter } from './routes/contacts'
@@ -10,7 +12,7 @@ import { sheetsRouter } from './routes/sheets'
 import { settingsRouter } from './routes/settings'
 import { remindersRouter } from './routes/reminders'
 
-export async function startServer(db: BetterSQLite3Database<typeof schema>): Promise<number> {
+export async function startServer(db: BetterSQLite3Database<typeof schema>, userDataPath: string): Promise<number> {
   const app = express()
   app.use(express.json())
   app.use((req, res, next) => {
@@ -25,6 +27,18 @@ export async function startServer(db: BetterSQLite3Database<typeof schema>): Pro
   app.use((req, _res, next) => {
     ;(req as any).db = db
     next()
+  })
+
+  // Serve locally-cached profile pictures
+  app.get('/avatars/:contactId', (req, res) => {
+    const file = join(userDataPath, 'avatars', `${req.params.contactId}.jpg`)
+    if (existsSync(file)) {
+      res.setHeader('Content-Type', 'image/jpeg')
+      res.setHeader('Cache-Control', 'public, max-age=86400')
+      res.end(readFileSync(file))
+    } else {
+      res.status(404).end()
+    }
   })
 
   app.use('/contacts', contactsRouter)

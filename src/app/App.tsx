@@ -11,6 +11,7 @@ type Page = 'kanban' | 'settings'
 
 export default function App() {
   const [waStatus, setWaStatus] = useState<'disconnected' | 'connecting' | 'connected'>('connecting')
+  const [pendingQR, setPendingQR] = useState(false)  // true when WA sends a QR code
   const [page, setPage] = useState<Page>('kanban')
   const { setContacts } = useContactsStore()
   const { setReminders } = useRemindersStore()
@@ -25,6 +26,9 @@ export default function App() {
         .catch(console.error)
 
     window.api.getWAStatus().then((s: any) => setWaStatus(s))
+
+    // Listen for QR code events — show onboarding whenever WA sends a QR
+    const offQR = window.api.onQR(() => setPendingQR(true))
     fetchContacts()
     fetch(`http://127.0.0.1:${port}/reminders`)
       .then((r) => r.json())
@@ -33,10 +37,13 @@ export default function App() {
 
     // Re-fetch contacts after history sync batches finish
     const offHistory = window.api.onHistorySynced(fetchContacts)
-    return () => { offHistory() }
+    return () => { offHistory(); offQR() }
   }, [])
 
-  useWhatsApp(setWaStatus)
+  useWhatsApp((s) => {
+    setWaStatus(s)
+    if (s === 'connected') setPendingQR(false)  // clear QR once connected
+  })
   useSnooze()
 
   // Keyboard shortcuts
@@ -54,9 +61,9 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [page])
 
-  // Show onboarding if not connected and no contacts loaded
+  // Show onboarding if no contacts loaded OR if WA is asking us to scan a QR
   const contacts = useContactsStore((s) => s.contacts)
-  const showOnboarding = waStatus !== 'connected' && contacts.length === 0
+  const showOnboarding = pendingQR || (waStatus !== 'connected' && contacts.length === 0)
 
   if (showOnboarding) {
     return <OnboardingPage waStatus={waStatus} />

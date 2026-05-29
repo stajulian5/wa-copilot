@@ -1,7 +1,6 @@
+import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { formatDistanceToNow } from 'date-fns'
-import { es } from 'date-fns/locale'
 import { useRemindersStore } from '../stores/remindersStore'
 import type { Contact } from '../../server/db/schema'
 
@@ -10,11 +9,88 @@ interface Props {
   onClick: () => void
 }
 
-/** Returns a readable fallback when contact has no saved name */
+// ── Avatar ────────────────────────────────────────────────────────────────────
+
+const AVATAR_COLORS = [
+  '#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b',
+  '#ef4444', '#ec4899', '#06b6d4', '#84cc16'
+]
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0][0].toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
+function InitialsAvatar({ name, id, size }: { name: string; id: number; size: number }) {
+  const bg = AVATAR_COLORS[id % AVATAR_COLORS.length]
+  const initials = getInitials(name)
+  return (
+    <div
+      className="rounded-full flex items-center justify-center shrink-0 text-white font-semibold"
+      style={{ width: size, height: size, backgroundColor: bg, fontSize: size * 0.36 }}
+    >
+      {initials}
+    </div>
+  )
+}
+
+function GroupAvatar({ size }: { size: number }) {
+  return (
+    <div
+      className="rounded-full flex items-center justify-center shrink-0 bg-gray-400"
+      style={{ width: size, height: size, fontSize: size * 0.5 }}
+    >
+      <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 24 24" fill="white">
+        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+      </svg>
+    </div>
+  )
+}
+
+function ContactAvatar({ contact, size, port }: { contact: Contact; size: number; port: number }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  const displayName = contact.name ?? contact.phone ?? ''
+
+  if (!imgFailed) {
+    return (
+      <img
+        src={`http://127.0.0.1:${port}/avatars/${contact.id}`}
+        alt={displayName}
+        onError={() => setImgFailed(true)}
+        className="rounded-full object-cover shrink-0"
+        style={{ width: size, height: size }}
+      />
+    )
+  }
+
+  if (contact.isGroup) return <GroupAvatar size={size} />
+  return <InitialsAvatar name={displayName || '?'} id={contact.id} size={size} />
+}
+
+// ── Time formatting ───────────────────────────────────────────────────────────
+
+function formatWATime(date: Date | null): string {
+  if (!date) return ''
+  const now = new Date()
+  const d = new Date(date)
+  const diffMs = now.getTime() - d.getTime()
+  const diffDays = Math.floor(diffMs / 86_400_000)
+
+  if (diffDays === 0) {
+    return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false })
+  }
+  if (diffDays === 1) return 'Ayer'
+  if (diffDays < 7) {
+    return d.toLocaleDateString('es-MX', { weekday: 'short' })
+  }
+  return d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' })
+}
+
 function formatFallbackName(whatsappId: string, phone: string | null): string {
-  if (whatsappId.endsWith('@lid')) return 'Contacto WA'  // LID ≠ phone number
+  if (whatsappId.endsWith('@lid')) return 'Contacto WA'
   if (!phone) return whatsappId
-  // Format Mexican numbers: 521XXXXXXXXXX → +52 1 XXX XXX XXXX
   if (phone.startsWith('521') && phone.length === 13) {
     return `+52 1 ${phone.slice(3, 6)} ${phone.slice(6, 9)} ${phone.slice(9)}`
   }
@@ -24,40 +100,26 @@ function formatFallbackName(whatsappId: string, phone: string | null): string {
   return `+${phone}`
 }
 
-function idleColor(lastAt: Date | null): string {
-  if (!lastAt) return 'text-gray-400'
-  const diffH = (Date.now() - new Date(lastAt).getTime()) / 3_600_000
-  if (diffH < 2) return 'text-gray-400'
-  if (diffH < 24) return 'text-amber-500'
-  if (diffH < 72) return 'text-orange-500'
-  return 'text-red-500'
-}
-
-function stageAgeLabel(stageChangedAt: Date | null): string | null {
-  if (!stageChangedAt) return null
-  const diffDays = (Date.now() - new Date(stageChangedAt).getTime()) / 86_400_000
-  if (diffDays < 5) return null
-  return `${Math.floor(diffDays)}d`
-}
+// ── Card ──────────────────────────────────────────────────────────────────────
 
 export function ContactCard({ contact, onClick }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: String(contact.id)
   })
-  // Use .some() (returns boolean) so Zustand can compare by value — avoids infinite re-render loop
   const hasSnooze = useRemindersStore(s =>
     s.reminders.some(r => r.contactId === contact.id && !r.isDone)
   )
 
+  const port = window.api?.serverPort ?? 3847
+  const displayName = contact.name ?? formatFallbackName(contact.whatsappId, contact.phone)
+  const lastAt = contact.lastMessageAt ? new Date(contact.lastMessageAt) : null
+  const unreadCount = contact.unreadCount ?? 0
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1
+    opacity: isDragging ? 0.4 : 1
   }
-
-  const displayName = contact.name ?? formatFallbackName(contact.whatsappId, contact.phone)
-  const lastAt = contact.lastMessageAt ? new Date(contact.lastMessageAt) : null
-  const stageAge = stageAgeLabel(contact.stageChangedAt ? new Date(contact.stageChangedAt) : null)
 
   return (
     <div
@@ -66,55 +128,41 @@ export function ContactCard({ contact, onClick }: Props) {
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md hover:border-gray-200 transition-all select-none"
+      className="flex items-center gap-3 px-3 py-2.5 bg-white border-b border-gray-100 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors select-none last:border-b-0"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-medium text-sm text-gray-900 truncate">{displayName}</span>
-            {contact.isGroup && <span className="text-xs text-gray-400">👥</span>}
-            {hasSnooze && <span className="text-xs">🔔</span>}
-          </div>
+      {/* Avatar */}
+      <ContactAvatar contact={contact} size={46} port={port} />
 
-          <p className="text-xs text-gray-500 truncate mt-0.5">
-            {contact.lastMessage ?? 'Sin mensajes'}
+      {/* Text content */}
+      <div className="flex-1 min-w-0">
+        {/* Row 1: Name + time */}
+        <div className="flex items-baseline justify-between gap-1">
+          <span className="font-semibold text-gray-900 text-[14px] truncate leading-snug">
+            {displayName}
+          </span>
+          <span className={`text-[11px] shrink-0 tabular-nums ${unreadCount > 0 ? 'text-[#25D366] font-medium' : 'text-gray-400'}`}>
+            {formatWATime(lastAt)}
+          </span>
+        </div>
+
+        {/* Row 2: Last message + badges */}
+        <div className="flex items-center justify-between gap-2 mt-0.5">
+          <p className="text-[13px] text-gray-500 truncate flex-1 leading-tight">
+            {contact.lastMessage ?? <span className="text-gray-300">Sin mensajes</span>}
           </p>
-
-          {contact.property && (
-            <p className="text-xs text-blue-600 truncate mt-0.5">🏠 {contact.property}</p>
-          )}
+          <div className="flex items-center gap-1 shrink-0">
+            {hasSnooze && <span className="text-[11px]">🔔</span>}
+            {unreadCount > 0 && (
+              <span className="bg-[#25D366] text-white text-[11px] font-bold min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          {lastAt && (
-            <span className={`text-xs ${idleColor(lastAt)}`}>
-              {formatDistanceToNow(lastAt, { locale: es, addSuffix: false })}
-            </span>
-          )}
-          {(contact.unreadCount ?? 0) > 0 && (
-            <span className="bg-green-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-              {contact.unreadCount}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Pills row */}
-      <div className="flex flex-wrap gap-1 mt-2">
-        {contact.kycStatus && (
-          <span className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full">
-            KYC: {contact.kycStatus}
-          </span>
-        )}
-        {contact.contractStatus && (
-          <span className="text-xs bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full">
-            {contact.contractStatus}
-          </span>
-        )}
-        {stageAge && (
-          <span className="text-xs bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full">
-            {stageAge} en etapa
-          </span>
+        {/* Row 3: Property tag (optional) */}
+        {contact.property && (
+          <p className="text-[11px] text-blue-500 truncate mt-0.5">🏠 {contact.property}</p>
         )}
       </div>
     </div>
