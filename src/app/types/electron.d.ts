@@ -17,6 +17,9 @@ declare global {
       onContactUpserted: (cb: (contact: Contact) => void) => () => void
       onHistorySynced: (cb: () => void) => () => void
 
+      // WhatsApp re-link
+      resetWAAuth: () => Promise<void>
+
       // System
       notify: (title: string, body: string) => Promise<void>
       setBadge: (count: number) => Promise<void>

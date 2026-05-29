@@ -38,6 +38,9 @@ export const api = {
     return () => ipcRenderer.removeAllListeners('wa:historySynced')
   },
 
+  // WhatsApp re-link (clears auth + shows QR)
+  resetWAAuth: () => ipcRenderer.invoke('wa:resetAuth'),
+
   // Notifications & badge
   notify: (title: string, body: string) => ipcRenderer.invoke('notify', title, body),
   setBadge: (count: number) => ipcRenderer.invoke('set-badge', count),

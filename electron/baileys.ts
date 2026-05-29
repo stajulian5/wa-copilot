@@ -8,6 +8,7 @@ import {
 } from '@whiskeysockets/baileys'
 import { BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
+import { rmSync } from 'fs'
 import { eq } from 'drizzle-orm'
 import * as schema from '../src/server/db/schema'
 import { userData } from './main'
@@ -35,6 +36,16 @@ export async function startBaileys(
   _port: number
 ) {
   ipcMain.handle('wa:getStatus', () => waStatus)
+  ipcMain.handle('wa:resetAuth', async () => {
+    // Disconnect existing socket
+    try { sock?.end(new Error('manual reset')) } catch {}
+    sock = null
+    setStatus(win, 'disconnected')
+    // Delete auth state so next connect shows QR
+    try { rmSync(AUTH_DIR(), { recursive: true, force: true }) } catch {}
+    // Reconnect (will show QR)
+    setTimeout(() => connect(db, win), 500)
+  })
   ipcMain.handle('wa:sendMessage', async (_e, jid: string, text: string) => {
     if (!sock) throw new Error('WA not connected')
     const result = await sock.sendMessage(jid, { text })
@@ -94,6 +105,8 @@ async function connect(db: BetterSQLite3Database<typeof schema>, win: BrowserWin
     if (connection === 'open') {
       reconnectAttempts = 0
       setStatus(win, 'connected')
+      // Hydrate group names and contact names after connection
+      setTimeout(() => hydrateContactNames(db, win), 3000)
     }
 
     if (connection === 'close') {
@@ -160,13 +173,78 @@ async function connect(db: BetterSQLite3Database<typeof schema>, win: BrowserWin
 
   // ── Contact names from phone book ──────────────────────────────────────────
   sock.ev.on('contacts.upsert', async (baileysContacts) => {
+    let updated = false
     for (const bc of baileysContacts) {
       const name = bc.name ?? (bc as any).notify ?? null
+      console.log(`[baileys] contacts.upsert: ${bc.id} → name=${name}`)
       if (!name) continue
-      db.update(schema.contacts)
+      const result = db.update(schema.contacts)
         .set({ name, updatedAt: new Date() })
         .where(eq(schema.contacts.whatsappId, bc.id))
         .run()
+      if (result.changes > 0) updated = true
+    }
+    if (updated) win.webContents.send('wa:historySynced', null)
+  })
+
+  // ── Chat list: create contacts for all WA conversations ───────────────────
+  sock.ev.on('chats.upsert', async (chats) => {
+    console.log(`[baileys] chats.upsert: ${chats.length} chats`)
+    let anyNew = false
+    for (const chat of chats) {
+      const jid = chat.id
+      if (!jid) continue
+      // Skip broadcasts and status
+      if (jid.endsWith('@broadcast') || jid === 'status@broadcast') continue
+
+      const existing = db.select().from(schema.contacts).where(eq(schema.contacts.whatsappId, jid)).all()[0]
+      if (!existing) {
+        // Create a stub contact from chat metadata
+        const isGroup = jid.endsWith('@g.us')
+        const lastTs = (chat as any).conversationTimestamp
+          ? Number((chat as any).conversationTimestamp) * 1000
+          : Date.now()
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+        const stage = lastTs < sevenDaysAgo ? 'all_resolved' : 'new'
+        const name = (chat as any).name ?? null
+
+        db.insert(schema.contacts).values({
+          whatsappId: jid,
+          phone: isGroup ? jid.split('@')[0] : jid.split('@')[0],
+          name,
+          isGroup,
+          stage,
+          stageChangedAt: new Date(),
+          lastMessage: (chat as any).lastMessage?.message
+            ? extractBodyFromRaw((chat as any).lastMessage)
+            : undefined,
+          lastMessageAt: new Date(lastTs),
+          lastMessageDirection: 'in',
+          unreadCount: (chat as any).unreadCount ?? 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }).run()
+        anyNew = true
+      } else {
+        // Update unread count and last message time if chat has more recent data
+        const chatTs = (chat as any).conversationTimestamp
+          ? Number((chat as any).conversationTimestamp) * 1000
+          : null
+        const chatName = (chat as any).name ?? null
+        if (chatTs || (chatName && !existing.name)) {
+          db.update(schema.contacts).set({
+            ...(chatName && !existing.name ? { name: chatName } : {}),
+            ...(chatTs && (!existing.lastMessageAt || new Date(chatTs) > existing.lastMessageAt) ? { lastMessageAt: new Date(chatTs) } : {}),
+            updatedAt: new Date()
+          }).where(eq(schema.contacts.whatsappId, jid)).run()
+        }
+      }
+    }
+
+    if (anyNew) {
+      // For new group contacts, fetch their names
+      await hydrateContactNames(db, win)
+      win.webContents.send('wa:historySynced', null)
     }
   })
 
@@ -200,6 +278,44 @@ async function connect(db: BetterSQLite3Database<typeof schema>, win: BrowserWin
       win.webContents.send('wa:historySynced', null)
     }
   })
+}
+
+// ── Hydrate names for existing contacts after connection ───────────────────────
+async function hydrateContactNames(
+  db: BetterSQLite3Database<typeof schema>,
+  win: BrowserWindow
+) {
+  if (!sock) return
+  const contacts = db.select().from(schema.contacts).all()
+  let updated = false
+
+  for (const contact of contacts) {
+    const jid = contact.whatsappId
+    if (contact.name) continue // already have a name
+
+    try {
+      if (jid.endsWith('@g.us')) {
+        // Fetch group subject
+        const meta = await sock.groupMetadata(jid)
+        if (meta?.subject) {
+          db.update(schema.contacts)
+            .set({ name: meta.subject, updatedAt: new Date() })
+            .where(eq(schema.contacts.whatsappId, jid))
+            .run()
+          updated = true
+          console.log(`[baileys] hydrated group name: ${jid} → ${meta.subject}`)
+        }
+      }
+      // For @s.whatsapp.net / @lid: names come via pushName on next message
+      // We can try fetchStatus but it only returns status text, not the contact name
+    } catch (e) {
+      console.log(`[baileys] hydrateContactNames failed for ${jid}:`, (e as Error).message)
+    }
+  }
+
+  if (updated) {
+    win.webContents.send('wa:historySynced', null)
+  }
 }
 
 async function upsertMessage(
@@ -273,6 +389,20 @@ async function upsertMessage(
   }
 
   return { contact: contact ?? null, isNew }
+}
+
+function extractBodyFromRaw(raw: any): string | undefined {
+  const m = raw?.message
+  if (!m) return undefined
+  return (
+    m.conversation ??
+    m.extendedTextMessage?.text ??
+    m.imageMessage?.caption ??
+    m.videoMessage?.caption ??
+    m.documentMessage?.fileName ??
+    (m.audioMessage ? '[Voice note]' : undefined) ??
+    (m.stickerMessage ? '[Sticker]' : undefined)
+  )
 }
 
 function extractBody(msg: proto.IWebMessageInfo): string | undefined {

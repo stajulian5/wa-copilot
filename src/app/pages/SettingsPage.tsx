@@ -19,6 +19,7 @@ export function SettingsPage({ onBack }: Props) {
   const [sheetsTab, setSheetsTab] = useState('')
   const [lastSync, setLastSync] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
+  const [resetting, setResetting] = useState(false)
 
   useEffect(() => {
     window.api.getApiKey().then((k: string | null) => { if (k) setApiKey(k) })
@@ -150,6 +151,27 @@ export function SettingsPage({ onBack }: Props) {
               )}
             </div>
           </div>
+        </section>
+
+        {/* WhatsApp re-link */}
+        <section className="mb-8 border-t border-gray-100 pt-8">
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">Vincular WhatsApp</h2>
+          <p className="text-xs text-gray-400 mb-3">
+            Desvincula el dispositivo actual y muestra un nuevo código QR. Usa esto para importar todo tu historial de conversaciones o cambiar el número vinculado.
+          </p>
+          <button
+            onClick={async () => {
+              if (!confirm('¿Desvincular WhatsApp y mostrar código QR? Se importará todo tu historial de conversaciones al volver a escanear.')) return
+              setResetting(true)
+              await window.api.resetWAAuth()
+              // App will show QR screen automatically
+              onBack()
+            }}
+            disabled={resetting}
+            className="px-4 py-2 bg-red-50 text-red-700 border border-red-200 text-sm rounded-lg hover:bg-red-100 disabled:opacity-50"
+          >
+            {resetting ? 'Desvinculando…' : '🔄 Volver a vincular'}
+          </button>
         </section>
 
       </div>
