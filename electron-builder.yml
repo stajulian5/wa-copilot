@@ -1,0 +1,17 @@
+appId: com.mica.wacopilot
+productName: WhatsApp Copilot
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**/*
+mac:
+  target:
+    - target: dmg
+      arch: arm64
+  category: public.app-category.business
+  darkModeSupport: true
+publish:
+  provider: github
+  owner: mica-rent
+  repo: wa-copilot

@@ -1,0 +1,15 @@
+{
+  "include": ["electron/**/*", "src/server/**/*", "electron.vite.config.ts", "drizzle.config.ts"],
+  "compilerOptions": {
+    "composite": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "strict": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@server/*": ["src/server/*"]
+    }
+  }
+}
