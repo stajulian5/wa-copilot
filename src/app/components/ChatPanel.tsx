@@ -9,6 +9,18 @@ import type { Message } from '../../server/db/schema'
 
 const PORT = () => window.api?.serverPort ?? 3847
 
+function formatFallbackName(whatsappId: string, phone: string | null): string {
+  if (whatsappId.endsWith('@lid')) return 'Contacto WA'  // LID ≠ phone number
+  if (!phone) return whatsappId
+  if (phone.startsWith('521') && phone.length === 13) {
+    return `+52 1 ${phone.slice(3, 6)} ${phone.slice(6, 9)} ${phone.slice(9)}`
+  }
+  if (phone.startsWith('52') && phone.length === 12) {
+    return `+52 ${phone.slice(2, 4)} ${phone.slice(4, 8)} ${phone.slice(8)}`
+  }
+  return `+${phone}`
+}
+
 interface Props {
   contactId: number
   onClose: () => void
@@ -148,7 +160,7 @@ export function ChatPanel({ contactId, onClose }: Props) {
                 onClick={() => setEditingName(true)}
                 title="Click para editar"
               >
-                {contact.name ?? contact.phone}
+                {contact.name ?? formatFallbackName(contact.whatsappId, contact.phone)}
               </h2>
             )}
             <p className="text-xs text-gray-400 mt-0.5">{contact.phone}</p>
@@ -249,7 +261,7 @@ export function ChatPanel({ contactId, onClose }: Props) {
             <TemplatesPicker
               onSelect={text => { setInput(prev => prev + text); setShowTemplates(false); inputRef.current?.focus() }}
               onClose={() => setShowTemplates(false)}
-              contactName={contact.name ?? contact.phone}
+              contactName={contact.name ?? formatFallbackName(contact.whatsappId, contact.phone)}
             />
           )}
 

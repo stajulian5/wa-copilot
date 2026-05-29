@@ -10,6 +10,20 @@ interface Props {
   onClick: () => void
 }
 
+/** Returns a readable fallback when contact has no saved name */
+function formatFallbackName(whatsappId: string, phone: string | null): string {
+  if (whatsappId.endsWith('@lid')) return 'Contacto WA'  // LID ≠ phone number
+  if (!phone) return whatsappId
+  // Format Mexican numbers: 521XXXXXXXXXX → +52 1 XXX XXX XXXX
+  if (phone.startsWith('521') && phone.length === 13) {
+    return `+52 1 ${phone.slice(3, 6)} ${phone.slice(6, 9)} ${phone.slice(9)}`
+  }
+  if (phone.startsWith('52') && phone.length === 12) {
+    return `+52 ${phone.slice(2, 4)} ${phone.slice(4, 8)} ${phone.slice(8)}`
+  }
+  return `+${phone}`
+}
+
 function idleColor(lastAt: Date | null): string {
   if (!lastAt) return 'text-gray-400'
   const diffH = (Date.now() - new Date(lastAt).getTime()) / 3_600_000
@@ -41,7 +55,7 @@ export function ContactCard({ contact, onClick }: Props) {
     opacity: isDragging ? 0.5 : 1
   }
 
-  const displayName = contact.name ?? contact.phone
+  const displayName = contact.name ?? formatFallbackName(contact.whatsappId, contact.phone)
   const lastAt = contact.lastMessageAt ? new Date(contact.lastMessageAt) : null
   const stageAge = stageAgeLabel(contact.stageChangedAt ? new Date(contact.stageChangedAt) : null)
 
