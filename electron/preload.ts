@@ -101,7 +101,12 @@ export const api = {
     ipcRenderer.on('app:updateAvailable', h)
     return () => ipcRenderer.removeListener('app:updateAvailable', h)
   },
-  openReleasePage: (url: string) => ipcRenderer.invoke('app:openReleasePage', url)
+  openReleasePage: (url: string) => ipcRenderer.invoke('app:openReleasePage', url),
+
+  // Chrome extension helpers
+  getExtensionPath: () => ipcRenderer.invoke('app:getExtensionPath'),
+  openExtensionInFinder: () => ipcRenderer.invoke('app:openExtensionInFinder'),
+  openChromeExtensions: () => ipcRenderer.invoke('app:openChromeExtensions')
 }
 
 contextBridge.exposeInMainWorld('api', api)

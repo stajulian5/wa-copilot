@@ -52,6 +52,11 @@ declare global {
       // Auto-update
       onUpdateAvailable: (cb: (info: { version: string; url: string }) => void) => () => void
       openReleasePage: (url: string) => Promise<void>
+
+      // Chrome extension helpers
+      getExtensionPath: () => Promise<string>
+      openExtensionInFinder: () => Promise<void>
+      openChromeExtensions: () => Promise<void>
     }
   }
 }

@@ -161,6 +161,34 @@ ipcMain.handle('set-badge', (_e, count: number) => {
 
 ipcMain.handle('get-user-data-path', () => userData)
 
+// ─── Chrome extension helpers ─────────────────────────────────────────────────
+
+// Return the bundled chrome-extension folder path.
+// In packaged app: inside .app/Contents/Resources/chrome-extension
+// In dev: project root chrome-extension/
+const extensionDir = app.isPackaged
+  ? join(process.resourcesPath, 'chrome-extension')
+  : join(__dirname, '../../chrome-extension')
+
+ipcMain.handle('app:getExtensionPath', () => extensionDir)
+
+// Open the extension folder in Finder so the user can drag-select it
+ipcMain.handle('app:openExtensionInFinder', () => {
+  shell.openPath(extensionDir)
+})
+
+// Open Chrome directly to the extensions management page
+ipcMain.handle('app:openChromeExtensions', () => {
+  // macOS: `open -a "Google Chrome"` honours chrome:// URLs
+  const { exec } = require('child_process')
+  exec('open -a "Google Chrome" "chrome://extensions/"', (err: any) => {
+    if (err) {
+      // Fallback: open browser to a plain help URL
+      shell.openExternal('https://support.google.com/chrome/answer/2664769')
+    }
+  })
+})
+
 // ─── Update checker ───────────────────────────────────────────────────────────
 
 const GITHUB_REPO = 'stajulian5/wa-copilot'

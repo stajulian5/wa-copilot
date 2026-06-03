@@ -9,6 +9,13 @@ directories:
 files:
   - out/**/*
 
+# Bundle the Chrome extension inside the .app so the path is always valid
+extraResources:
+  - from: chrome-extension/
+    to: chrome-extension/
+    filter:
+      - "**/*"
+
 # ── macOS ──────────────────────────────────────────────────────────────────────
 mac:
   # Universal covers both Apple Silicon (M1/M2/M3) and Intel Macs
