@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhatsApp Copilot — Nunca pierdas el hilo con un broker.</title>
+  <meta name="description" content="Un CRM de WhatsApp para KAMs. Kanban visual, chat integrado, sugerencias con IA. Todo en tu Mac, sin nubes ni servidores." />
+  <meta property="og:title" content="WhatsApp Copilot" />
+  <meta property="og:description" content="Un CRM de WhatsApp para KAMs. Kanban, chat integrado, IA." />
+  <meta property="og:image" content="https://stajulian5.github.io/wa-copilot/icon.png" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #f9f8f5;
+      --white:        #ffffff;
+      --ink:          #0e0e0e;
+      --ink2:         #3a3a3a;
+      --muted:        #888888;
+      --accent:       #25D366;
+      --accent-dark:  #128C7E;
+      --accent-light: #e8f9ee;
+      --border:       #e8e8e8;
+      --shadow:       0 2px 12px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.05);
+      --shadow-lg:    0 20px 60px rgba(0,0,0,.12), 0 4px 16px rgba(0,0,0,.06);
+      --radius:       16px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px; height: 58px;
+      background: rgba(249,248,245,0.88);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 800; font-size: 18px; letter-spacing: -.02em; color: var(--ink);
+      text-decoration: none;
+    }
+    .nav-logo img { width: 28px; height: 28px; border-radius: 7px; display: block; }
+    .nav-links { display: flex; gap: 28px; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500;
+      transition: color .15s;
+    }
+    .nav-links a:hover { color: var(--ink); }
+    .nav-btn {
+      background: var(--ink); color: #fff; text-decoration: none;
+      padding: 8px 18px; border-radius: 999px; font-size: 14px; font-weight: 700;
+      transition: background .15s, transform .15s; letter-spacing: -.01em;
+    }
+    .nav-btn:hover { background: var(--accent-dark); transform: translateY(-1px); }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative; overflow: hidden;
+    }
+    .blob {
+      position: absolute; border-radius: 50%;
+      filter: blur(80px); opacity: .45; pointer-events: none; z-index: 0;
+    }
+    .blob-1 { width: 500px; height: 500px; background: #b7f5ce; top: -100px; right: -100px; }
+    .blob-2 { width: 400px; height: 400px; background: #c7f0ff; bottom: 0; left: -80px; }
+    .blob-3 { width: 300px; height: 300px; background: #fff3b7; bottom: 100px; right: 10%; }
+
+    .hero-inner { position: relative; z-index: 1; max-width: 780px; }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--white); border: 1px solid var(--border);
+      color: var(--ink2); font-size: 12px; font-weight: 600;
+      padding: 6px 14px; border-radius: 999px; margin-bottom: 32px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      font-size: clamp(44px, 8vw, 88px);
+      font-weight: 900; letter-spacing: -.04em; line-height: 1.0;
+      color: var(--ink); margin-bottom: 8px;
+    }
+    .hero h1 .accent { color: var(--accent-dark); }
+    .hero h1 .wavy {
+      display: inline-block;
+      text-decoration: underline;
+      text-decoration-style: wavy;
+      text-decoration-color: var(--accent);
+      text-underline-offset: 6px;
+    }
+
+    .hero-tagline {
+      font-size: clamp(17px, 2.2vw, 22px);
+      color: var(--ink2); font-weight: 500;
+      margin: 20px auto 40px;
+      max-width: 520px; line-height: 1.6;
+    }
+    .hero-tagline strong { color: var(--ink); font-weight: 700; }
+
+    .hero-actions {
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--ink); color: #fff; text-decoration: none;
+      padding: 14px 28px; border-radius: 999px;
+      font-size: 16px; font-weight: 800; letter-spacing: -.02em;
+      box-shadow: 0 4px 20px rgba(0,0,0,.2);
+      transition: background .15s, transform .15s;
+    }
+    .btn-primary:hover { background: var(--accent-dark); transform: translateY(-2px); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--muted); text-decoration: none;
+      padding: 14px 20px; border-radius: 999px; font-size: 15px; font-weight: 500;
+      border: 1px solid var(--border); background: var(--white);
+      transition: border-color .15s, color .15s;
+    }
+    .btn-secondary:hover { border-color: var(--ink); color: var(--ink); }
+    .hero-note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+    /* ── Mini Kanban mockup ── */
+    #kanban-demo {
+      position: fixed;
+      top: 80px; right: 48px; z-index: 500;
+      pointer-events: none;
+      animation: float-idle 4s ease-in-out infinite;
+      filter: drop-shadow(0 16px 40px rgba(0,0,0,.14));
+    }
+    @keyframes float-idle {
+      0%, 100% { transform: translateY(0px) rotate(-.5deg); }
+      50%       { transform: translateY(-10px) rotate(.5deg); }
+    }
+    .km-shell {
+      width: 340px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.09);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,.1);
+    }
+    .km-titlebar {
+      background: #f5f5f5;
+      border-bottom: 1px solid #ebebeb;
+      padding: 8px 12px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .km-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .km-dot-r { background: #ff5f57; }
+    .km-dot-y { background: #febc2e; }
+    .km-dot-g { background: #28c840; }
+    .km-app-name {
+      flex: 1; text-align: center;
+      font-size: 11px; font-weight: 600; color: #888; letter-spacing: .02em;
+    }
+    .km-body {
+      display: flex; gap: 0;
+      padding: 10px;
+      background: #f9f8f5;
+      gap: 8px;
+    }
+    .km-col { flex: 1; }
+    .km-col-hdr {
+      font-size: 9px; font-weight: 800; letter-spacing: .08em;
+      color: #888; text-transform: uppercase;
+      margin-bottom: 6px; padding: 0 2px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .km-count {
+      background: #e0e0e0; color: #666;
+      font-size: 9px; font-weight: 700;
+      width: 16px; height: 16px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .km-count.green { background: #dcf5e7; color: #16a34a; }
+    .km-card {
+      background: #fff;
+      border: 1px solid #ebebeb;
+      border-radius: 10px;
+      padding: 8px 9px;
+      margin-bottom: 6px;
+      font-size: 10px;
+    }
+    .km-card-name { font-weight: 700; color: #111; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .km-card-preview { color: #888; font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .km-card-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
+    .km-card-time { color: #aaa; font-size: 8px; }
+    .km-badge {
+      background: #25D366; color: #fff;
+      font-size: 8px; font-weight: 800;
+      border-radius: 999px;
+      padding: 1px 5px; min-width: 14px; text-align: center;
+    }
+    .km-badge.gray { background: #e0e0e0; color: #666; }
+
+    /* ── Marquee ── */
+    .marquee-wrap {
+      background: var(--ink); color: #fff; padding: 14px 0;
+      overflow: hidden; white-space: nowrap;
+    }
+    .marquee-inner {
+      display: inline-flex; animation: marquee 25s linear infinite;
+    }
+    .marquee-item {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 0 32px; font-size: 14px; font-weight: 600; letter-spacing: -.01em;
+    }
+    .marquee-dot { color: var(--accent); font-size: 18px; }
+    @keyframes marquee {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* ── Villain section ── */
+    .villain-section {
+      background: var(--white);
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    }
+    .villain-inner {
+      max-width: 1160px; margin: 0 auto; padding: 100px 40px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start;
+    }
+    .villain-text h2 {
+      font-size: clamp(30px, 4vw, 48px); font-weight: 900;
+      letter-spacing: -.03em; line-height: 1.1; margin: 16px 0 20px;
+    }
+    .villain-text p { color: var(--muted); font-size: 16px; line-height: 1.75; }
+    .villain-angles { display: flex; flex-direction: column; gap: 20px; }
+    .angle-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 28px 28px 24px;
+      position: relative; overflow: hidden;
+    }
+    .angle-card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 4px; background: var(--accent); border-radius: 4px 0 0 4px;
+    }
+    .angle-num { font-size: 11px; font-weight: 900; letter-spacing: .12em; color: var(--accent); margin-bottom: 8px; }
+    .angle-card h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; letter-spacing: -.01em; }
+    .angle-card p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+    /* ── Features ── */
+    .section {
+      max-width: 1160px; margin: 0 auto; padding: 100px 40px;
+    }
+    .section-eyebrow {
+      display: inline-block;
+      background: var(--accent-light); color: var(--accent-dark);
+      font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+      padding: 5px 12px; border-radius: 999px; margin-bottom: 16px;
+    }
+    .section h2 {
+      font-size: clamp(30px, 4vw, 48px); font-weight: 900;
+      letter-spacing: -.03em; line-height: 1.1; margin-bottom: 12px;
+    }
+    .section-sub { color: var(--muted); font-size: 17px; max-width: 480px; margin-bottom: 56px; }
+    .feature-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    }
+    .feature-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 24px;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .feature-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+    .fc-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 16px; background: var(--accent-light);
+    }
+    .feature-card h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; letter-spacing: -.01em; }
+    .feature-card p  { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+    /* ── Setup ── */
+    .steps-section {
+      background: var(--white);
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    }
+    .steps-inner {
+      max-width: 1160px; margin: 0 auto; padding: 100px 40px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 100px; align-items: center;
+    }
+    .steps-list { display: flex; flex-direction: column; }
+    .step {
+      display: flex; gap: 20px; align-items: flex-start;
+      padding: 28px 0; border-bottom: 1px solid var(--border);
+    }
+    .step:first-child { padding-top: 0; }
+    .step:last-child { border-bottom: none; padding-bottom: 0; }
+    .step-num {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: var(--ink); color: #fff; font-size: 14px; font-weight: 900;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .step h3 { font-size: 16px; font-weight: 800; margin-bottom: 4px; letter-spacing: -.01em; }
+    .step p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .steps-visual {
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qr-mockup {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 24px; padding: 32px; width: 280px;
+      box-shadow: var(--shadow-lg);
+      animation: float-idle 4s ease-in-out infinite;
+      text-align: center;
+    }
+    .qr-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .qr-sub   { font-size: 11px; color: var(--muted); margin-bottom: 20px; }
+    .qr-grid  {
+      width: 140px; height: 140px; margin: 0 auto 20px;
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
+    }
+    .qr-cell { border-radius: 2px; }
+    .qr-cell.b { background: #111; }
+    .qr-cell.w { background: #f5f5f5; }
+    .qr-steps { display: flex; flex-direction: column; gap: 8px; text-align: left; }
+    .qr-step { display: flex; align-items: flex-start; gap: 8px; font-size: 11px; color: var(--muted); }
+    .qr-step-num {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      font-size: 9px; font-weight: 900; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Privacy ── */
+    .privacy-grid { display: flex; flex-direction: column; gap: 12px; }
+    .privacy-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px 20px;
+      display: flex; gap: 14px; align-items: flex-start;
+      transition: transform .15s;
+    }
+    .privacy-card:hover { transform: translateX(4px); }
+    .pc-icon  { font-size: 22px; flex-shrink: 0; }
+    .pc-title { font-size: 14px; font-weight: 800; margin-bottom: 2px; }
+    .pc-text  { font-size: 12px; color: var(--muted); }
+
+    /* ── CTA ── */
+    .cta {
+      background: var(--ink); color: #fff;
+      text-align: center; padding: 120px 40px;
+      position: relative; overflow: hidden;
+    }
+    .cta-blob { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
+    .cta-blob-1 { width: 500px; height: 500px; background: rgba(37,211,102,.25); top: -100px; left: 10%; }
+    .cta-blob-2 { width: 400px; height: 400px; background: rgba(18,140,126,.2);  bottom: -100px; right: 10%; }
+    .cta-inner { position: relative; z-index: 1; }
+    .cta h2 {
+      font-size: clamp(36px, 6vw, 72px); font-weight: 900;
+      letter-spacing: -.04em; line-height: 1.05; margin-bottom: 16px;
+    }
+    .cta h2 span { color: var(--accent); }
+    .cta p { color: rgba(255,255,255,.6); font-size: 18px; margin-bottom: 44px; font-weight: 500; }
+    .btn-cta {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: #fff; color: var(--ink); text-decoration: none;
+      padding: 16px 32px; border-radius: 999px;
+      font-size: 17px; font-weight: 900; letter-spacing: -.02em;
+      box-shadow: 0 8px 32px rgba(0,0,0,.3);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .btn-cta:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(0,0,0,.4); }
+    .cta-note { margin-top: 20px; font-size: 13px; color: rgba(255,255,255,.4); }
+    .cta-note a { color: rgba(255,255,255,.5); }
+
+    /* ── Footer ── */
+    footer {
+      padding: 28px 48px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      color: var(--muted); font-size: 13px; flex-wrap: wrap; gap: 12px;
+      background: var(--bg);
+    }
+    footer a { color: var(--muted); text-decoration: none; transition: color .15s; }
+    footer a:hover { color: var(--ink); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      #kanban-demo { display: none; }
+      .villain-inner { grid-template-columns: 1fr; gap: 48px; }
+      .steps-inner { grid-template-columns: 1fr; gap: 48px; }
+      .steps-visual { display: none; }
+      .feature-grid { grid-template-columns: 1fr 1fr; }
+      .section { padding: 72px 24px; }
+      footer { padding: 24px; justify-content: center; }
+    }
+    @media (max-width: 580px) {
+      .feature-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Mobile warning */
+    #mobile-warning { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; padding: 24px; }
+    #mobile-warning.show { display: flex; }
+    .mobile-warning-box { background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px 28px; max-width: 340px; text-align: center; }
+    .mobile-warning-box .mw-icon { font-size: 40px; margin-bottom: 16px; }
+    .mobile-warning-box h3 { font-size: 20px; font-weight: 700; margin-bottom: 10px; color: #fff; }
+    .mobile-warning-box p  { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.6; margin-bottom: 24px; }
+    .mw-close { display: inline-block; padding: 12px 28px; background: rgba(255,255,255,0.1); color: #fff; border-radius: 100px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; width: 100%; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a class="nav-logo" href="#">
+    <img src="icon.png" alt="WhatsApp Copilot" />
+    Copilot
+  </a>
+  <div class="nav-links">
+    <a href="#features">Funciones</a>
+    <a href="#setup">Instalación</a>
+    <a href="#privacy">Privacidad</a>
+  </div>
+  <a class="nav-btn" href="https://github.com/stajulian5/wa-copilot/releases/latest">
+    Descargar
+  </a>
+</nav>
+
+<!-- Floating Kanban demo -->
+<div id="kanban-demo">
+  <div class="km-shell">
+    <div class="km-titlebar">
+      <div class="km-dot km-dot-r"></div>
+      <div class="km-dot km-dot-y"></div>
+      <div class="km-dot km-dot-g"></div>
+      <div class="km-app-name">✈️ WhatsApp Copilot</div>
+    </div>
+    <div class="km-body">
+      <!-- New column -->
+      <div class="km-col">
+        <div class="km-col-hdr">
+          🆕 New
+          <div class="km-count green">3</div>
+        </div>
+        <div class="km-card">
+          <div class="km-card-name">Carmina GP</div>
+          <div class="km-card-preview">¿Hay respuesta del re…</div>
+          <div class="km-card-meta">
+            <div class="km-card-time">hace 2 min</div>
+            <div class="km-badge">4</div>
+          </div>
+        </div>
+        <div class="km-card">
+          <div class="km-card-name">Panel Proptech ☕</div>
+          <div class="km-card-preview">Vicky: Me gustan las…</div>
+          <div class="km-card-meta">
+            <div class="km-card-time">ayer</div>
+            <div class="km-badge">72</div>
+          </div>
+        </div>
+      </div>
+      <!-- Open column -->
+      <div class="km-col">
+        <div class="km-col-hdr">
+          💬 Open
+          <div class="km-count">2</div>
+        </div>
+        <div class="km-card">
+          <div class="km-card-name">Juliana Gomez</div>
+          <div class="km-card-preview">No me han compartido…</div>
+          <div class="km-card-meta">
+            <div class="km-card-time">11:19</div>
+            <div class="km-badge">1</div>
+          </div>
+        </div>
+        <div class="km-card">
+          <div class="km-card-name">Pissarro 1406</div>
+          <div class="km-card-preview">Leslie: Hola buenas n…</div>
+          <div class="km-card-meta">
+            <div class="km-card-time">ayer</div>
+            <div class="km-badge gray">·</div>
+          </div>
+        </div>
+      </div>
+      <!-- Resolved column -->
+      <div class="km-col">
+        <div class="km-col-hdr">
+          ✅ Done
+          <div class="km-count">1</div>
+        </div>
+        <div class="km-card">
+          <div class="km-card-name">Nimbe Del Rosario</div>
+          <div class="km-card-preview">🎤 Nota de voz</div>
+          <div class="km-card-meta">
+            <div class="km-card-time">jue</div>
+            <div class="km-badge gray">·</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="hero-inner">
+    <div class="hero-badge">✈️ macOS · WhatsApp · IA</div>
+
+    <h1>
+      Nunca pierdas<br/>
+      el hilo con un <span class="wavy">broker</span>.
+    </h1>
+
+    <p class="hero-tagline">
+      <strong>WhatsApp Copilot es el CRM que vive en tu Mac.</strong><br/>
+      Kanban visual, chat integrado, sugerencias con IA. Todo en tiempo real, sin servidores ni suscripciones.
+    </p>
+
+    <div class="hero-actions">
+      <a class="btn-primary" id="install-btn"
+         href="https://github.com/stajulian5/wa-copilot/releases/latest">
+        ⬇ Descargar para macOS
+      </a>
+      <a class="btn-secondary" href="https://github.com/stajulian5/wa-copilot">
+        Ver código ↗
+      </a>
+    </div>
+    <p class="hero-note">Abre el .dmg · arrastra a Aplicaciones · listo en 30 segundos</p>
+    <p class="hero-note">macOS 12+ · Apple Silicon &amp; Intel · <a href="https://github.com/stajulian5/wa-copilot" style="color:inherit">⭐ Star en GitHub</a></p>
+  </div>
+</section>
+
+<!-- Marquee -->
+<div class="marquee-wrap">
+  <div class="marquee-inner">
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Kanban de brokers</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Chat en tiempo real</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Sugerencias con IA</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Grupos y 1 a 1</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Multi-cuenta</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Sin servidores</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Código abierto</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Auto-actualización</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Kanban de brokers</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Chat en tiempo real</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Sugerencias con IA</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Grupos y 1 a 1</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Multi-cuenta</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Sin servidores</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Código abierto</span>
+    <span class="marquee-item"><span class="marquee-dot">✦</span> Auto-actualización</span>
+  </div>
+</div>
+
+<!-- Villain section -->
+<div class="villain-section">
+  <div class="villain-inner">
+    <div class="villain-text">
+      <div class="section-eyebrow" style="background:rgba(255,79,79,.1);color:#c0392b;">El problema</div>
+      <h2>WhatsApp no es<br/>un CRM.</h2>
+      <p>Los brokers te mandan mensajes a cualquier hora. Algunos los respondes enseguida, otros se van al fondo de la lista y desaparecen. No hay pipeline, no hay historial de conversaciones, no hay forma de saber en qué estado está cada relación.</p>
+      <p style="margin-top:16px">Copilot lo resuelve desde dos ángulos.</p>
+    </div>
+    <div class="villain-angles">
+      <div class="angle-card">
+        <div class="angle-num">01</div>
+        <h3>Nunca más un broker olvidado</h3>
+        <p>Cada conversación vive en una columna del Kanban. Arrastra el broker de <em>New</em> a <em>Open Conversation</em> cuando empiezas a hablar, y a <em>All Resolved</em> cuando cierras. Si vuelven a escribir, la tarjeta salta sola a <em>New</em>.</p>
+      </div>
+      <div class="angle-card">
+        <div class="angle-num">02</div>
+        <h3>Responde más rápido — con IA</h3>
+        <p>Copilot lee el historial completo de la conversación, el estado del KYC y la etapa del pipeline, y genera una respuesta lista para enviar. Tú decides si la mandas tal cual o la editas — siempre en tu voz.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Features -->
+<div class="section" id="features">
+  <div class="section-eyebrow">Funciones</div>
+  <h2>Todo lo que necesitas.<br/>Nada que sobre.</h2>
+  <p class="section-sub">Diseñado para KAMs que pasan el día en WhatsApp y necesitan saber en todo momento en qué punto está cada broker.</p>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="fc-icon">📋</div>
+      <h3>Kanban visual</h3>
+      <p>Cuatro columnas: New, Open Conversation, Waiting For, All Resolved. Arrastra tarjetas con el mouse o usa el menú rápido desde el chat.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">💬</div>
+      <h3>Chat integrado</h3>
+      <p>Lee y responde mensajes de WhatsApp sin salir de Copilot. Historial completo, grupos con nombre del remitente, notas de voz e imágenes.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">✨</div>
+      <h3>Sugerencias con IA</h3>
+      <p>Claude Haiku redacta una respuesta contextual con un toque. ⌘↵ para enviarla directo, o edítala antes. Nunca una respuesta genérica.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">📎</div>
+      <h3>Envía archivos</h3>
+      <p>Adjunta imágenes, PDFs, documentos y más directamente desde el chat. Sin cambiar de app ni pasar por el teléfono.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">👥</div>
+      <h3>Multi-cuenta</h3>
+      <p>Conecta varios números de WhatsApp simultáneamente. Cambia entre ellos con un clic desde la barra superior.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">🔍</div>
+      <h3>Búsqueda en chat</h3>
+      <p>⌘F dentro de cualquier conversación para buscar un mensaje. Los resultados se resaltan en amarillo al instante.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">🔔</div>
+      <h3>Snooze de brokers</h3>
+      <p>Pospón una conversación hasta que sea relevante. La tarjeta vuelve a New automáticamente en el momento que eliges.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">🔄</div>
+      <h3>Sincronización automática</h3>
+      <p>Al encender la Mac, Copilot recupera los mensajes perdidos mientras estaba apagado. Sin pérdidas silenciosas.</p>
+    </div>
+    <div class="feature-card">
+      <div class="fc-icon">📊</div>
+      <h3>Google Sheets sync</h3>
+      <p>Conecta tu hoja de brokers. Los nombres y estados se actualizan automáticamente en el Kanban.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Setup -->
+<div class="steps-section" id="setup">
+  <div class="steps-inner">
+    <div>
+      <div class="section-eyebrow">Instalación</div>
+      <h2>En marcha<br/>en 3 minutos.</h2>
+      <p class="section-sub" style="margin-bottom:48px">Sin Terminal. Sin configuración. Solo descarga y escanea.</p>
+
+      <div class="steps-list">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <h3>Descarga e instala</h3>
+            <p>Abre el .dmg, arrastra WhatsApp Copilot a tu carpeta de Aplicaciones. Doble clic para abrir.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <h3>Escanea el código QR</h3>
+            <p>Abre WhatsApp en tu teléfono → Dispositivos vinculados → Vincular dispositivo → apunta la cámara al código. Listo.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <h3>Tus brokers aparecen solos</h3>
+            <p>Copilot sincroniza tu historial y coloca cada contacto en el Kanban. Empieza a organizar desde el primer minuto.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="steps-visual">
+      <div class="qr-mockup">
+        <div class="qr-title">Vincula tu WhatsApp</div>
+        <div class="qr-sub">Escanea con tu teléfono</div>
+        <!-- Simple QR pattern illustration -->
+        <div class="qr-grid">
+          <!-- Row 1 -->
+          <div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell b"></div>
+          <!-- Row 2 -->
+          <div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div>
+          <!-- Row 3 -->
+          <div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div>
+          <!-- Row 4 -->
+          <div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div>
+          <!-- Row 5 -->
+          <div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div>
+          <!-- Row 6 -->
+          <div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div>
+          <!-- Row 7 -->
+          <div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell b"></div>
+        </div>
+        <div class="qr-steps">
+          <div class="qr-step"><div class="qr-step-num">1</div><span>Abre WhatsApp en tu teléfono</span></div>
+          <div class="qr-step"><div class="qr-step-num">2</div><span>Dispositivos vinculados → Vincular</span></div>
+          <div class="qr-step"><div class="qr-step-num">3</div><span>Apunta la cámara aquí ↑</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Privacy -->
+<div class="section" id="privacy">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;">
+    <div>
+      <div class="section-eyebrow">Privacidad</div>
+      <h2>Tus datos nunca salen de tu Mac.</h2>
+      <p style="color:var(--muted);font-size:16px;line-height:1.75;margin-bottom:20px">
+        Copilot no tiene backend propio. Los mensajes van de WhatsApp directo a tu pantalla — sin pasar por ningún servidor nuestro.
+      </p>
+      <a href="https://github.com/stajulian5/wa-copilot" style="color:var(--accent-dark);text-decoration:none;font-weight:600;">Ver el código fuente →</a>
+    </div>
+    <div class="privacy-grid">
+      <div class="privacy-card">
+        <div class="pc-icon">💾</div>
+        <div>
+          <div class="pc-title">SQLite local</div>
+          <div class="pc-text">Todos tus mensajes y contactos se guardan en un archivo en tu Mac. Tú controlas el backup.</div>
+        </div>
+      </div>
+      <div class="privacy-card">
+        <div class="pc-icon">🔑</div>
+        <div>
+          <div class="pc-title">Sesión en Keychain</div>
+          <div class="pc-text">Tu sesión de WhatsApp se almacena en el Keychain de macOS. Cifrada, local, solo tuya.</div>
+        </div>
+      </div>
+      <div class="privacy-card">
+        <div class="pc-icon">🚫</div>
+        <div>
+          <div class="pc-title">Sin servidores de terceros</div>
+          <div class="pc-text">Tu Mac habla directamente con WhatsApp. Nada pasa por servidores de Mica ni de nadie más.</div>
+        </div>
+      </div>
+      <div class="privacy-card">
+        <div class="pc-icon">👁</div>
+        <div>
+          <div class="pc-title">Código abierto</div>
+          <div class="pc-text">Cada línea de código está en GitHub. Puedes leer exactamente qué corre en tu Mac.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta">
+  <div class="cta-blob cta-blob-1"></div>
+  <div class="cta-blob cta-blob-2"></div>
+  <div class="cta-inner">
+    <h2>Deja de perder<br/><span>brokers en el caos.</span></h2>
+    <p>Gratis. Local. Siempre ahí.</p>
+    <a class="btn-cta" id="cta-download"
+       href="https://github.com/stajulian5/wa-copilot/releases/latest">
+      ⬇ Descargar WhatsApp Copilot
+    </a>
+    <p class="cta-note">
+      macOS 12+ &nbsp;·&nbsp; Apple Silicon &amp; Intel &nbsp;·&nbsp;
+      <a href="https://github.com/stajulian5/wa-copilot">Código abierto ↗</a>
+    </p>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div>✈️ WhatsApp Copilot — hecho con ☕ por <a href="https://github.com/stajulian5">Julian</a> para los KAMs de Mica</div>
+  <div style="display:flex;gap:24px">
+    <a href="https://github.com/stajulian5/wa-copilot">GitHub</a>
+    <a href="https://github.com/stajulian5/wa-copilot/releases">Releases</a>
+  </div>
+</footer>
+
+<!-- Mobile warning -->
+<div id="mobile-warning">
+  <div class="mobile-warning-box">
+    <div class="mw-icon">🖥️</div>
+    <h3>Copilot es para Mac</h3>
+    <p>Esta app corre en macOS 12 o superior. Abre esta página en tu Mac para descargarla.</p>
+    <button class="mw-close">Entendido</button>
+  </div>
+</div>
+
+<script>
+// Mobile download intercept
+document.querySelectorAll('#install-btn, #cta-download').forEach(btn => {
+  btn.addEventListener('click', e => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const isMac    = /Macintosh|MacIntel|MacPPC|Mac68K/i.test(navigator.userAgent);
+    if (isMobile || (!isMac && window.innerWidth < 900)) {
+      e.preventDefault();
+      document.getElementById('mobile-warning').classList.add('show');
+    }
+  });
+});
+document.querySelector('.mw-close').addEventListener('click', () => {
+  document.getElementById('mobile-warning').classList.remove('show');
+});
+</script>
+
+</body>
+</html>
