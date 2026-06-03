@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Mica CRM — Sync Contacts",
-  "version": "1.0",
-  "description": "Sincroniza nombres de WhatsApp Web con Mica CRM",
+  "name": "WhatsApp Copilot — Sync Contacts",
+  "short_name": "WA Copilot",
+  "version": "1.0.1",
+  "description": "Syncs your WhatsApp contact names into the WhatsApp Copilot desktop app so your brokers appear by name instead of phone number.",
   "permissions": ["tabs", "scripting"],
   "host_permissions": [
     "https://web.whatsapp.com/*",
@@ -10,7 +11,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Mica CRM Sync",
+    "default_title": "WhatsApp Copilot — Sync Contacts",
     "default_icon": {
       "16": "icon16.png",
       "48": "icon48.png",

@@ -122,6 +122,12 @@ export default function App() {
   const contacts = useContactsStore((s) => s.contacts)
   const activeAccountId = useContactsStore((s) => s.activeAccountId)
 
+  // ── #1 Dock badge — total unread across all contacts ─────────────────────
+  useEffect(() => {
+    const total = contacts.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0)
+    window.api.setBadge(total)
+  }, [contacts])
+
   // Show full-screen QR when: explicitly linking, or first-time (no contacts + not connected)
   if (page === 'linking' || (waStatus !== 'connected' && contacts.length === 0)) {
     return (

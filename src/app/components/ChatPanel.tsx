@@ -93,7 +93,7 @@ type Tab = 'chat' | 'notes'
 export function ChatPanel({ contactId, onClose }: Props) {
   const contact = useContactsStore(s => s.contacts.find(c => c.id === contactId))
   const { updateContact } = useContactsStore()
-  const { byContact, setMessages, prependMessages } = useMessagesStore()
+  const { byContact, setMessages, prependMessages, upsertMessage } = useMessagesStore()
   const messages = byContact[contactId] ?? []
 
   const [tab, setTab] = useState<Tab>('chat')
@@ -106,6 +106,15 @@ export function ChatPanel({ contactId, onClose }: Props) {
   const [aiLoading, setAiLoading] = useState(false)
   const [showSnooze, setShowSnooze] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
+
+  // #4 — media file attachment
+  const [pendingFile, setPendingFile] = useState<string | null>(null)  // full path
+  const [sendingMedia, setSendingMedia] = useState(false)
+
+  // #5 — in-chat search
+  const [showSearch, setShowSearch] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -137,13 +146,17 @@ export function ChatPanel({ contactId, onClose }: Props) {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onClose(); return }
+      if (e.key === 'Escape') {
+        if (showSearch) { setShowSearch(false); setSearchTerm(''); return }
+        onClose(); return
+      }
       if (e.metaKey && e.key === 'n') { e.preventDefault(); setShowSnooze(true) }
       if (e.metaKey && e.key === 'Enter' && aiSuggestion) { e.preventDefault(); sendText(aiSuggestion); setAiSuggestion(null) }
+      if (e.metaKey && e.key === 'f') { e.preventDefault(); setShowSearch(v => !v); setTimeout(() => searchInputRef.current?.focus(), 50) }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [aiSuggestion])
+  }, [aiSuggestion, showSearch])
 
   const loadEarlier = async () => {
     const oldest = messages[0]
@@ -157,12 +170,54 @@ export function ChatPanel({ contactId, onClose }: Props) {
     setLoading(false)
   }
 
+  // #2 — optimistic helper: inserts a message immediately into the store
+  const insertOptimistic = (body: string, type: Message['type'] = 'text', extraProps: Partial<Message> = {}): string => {
+    const tempId = `local_${Date.now()}_${Math.random()}`
+    const now = new Date()
+    upsertMessage(contactId, {
+      id: -1, contactId, whatsappMsgId: tempId,
+      direction: 'out', body, type,
+      timestamp: now, status: 'pending',
+      isEdited: false, isDeleted: false,
+      mediaUrl: null, mediaFilename: null, mediaMimetype: null, mediaSize: null,
+      reactionEmoji: null, quotedMsgId: null,
+      senderName: null, senderJid: null, sentByManagerId: null,
+      createdAt: now, ...extraProps
+    } as Message)
+    updateContact(contactId, { lastMessage: body, lastMessageAt: now, lastMessageDirection: 'out' })
+    return tempId
+  }
+
   const sendText = async (text: string) => {
     if (!text.trim() || !contact) return
-    await window.api.sendMessage(contact.whatsappId, text.trim())
     setInput('')
     setAiSuggestion(null)
     inputRef.current?.focus()
+    insertOptimistic(text.trim())                   // show immediately
+    await window.api.sendMessage(contact.whatsappId, text.trim())
+    // The real message arrives via wa:newMessage → upsertMessage deduplicates by whatsappMsgId
+  }
+
+  // #4 — send media file
+  const pickAndSendFile = async () => {
+    const path = await window.api.pickFile()
+    if (path) setPendingFile(path)
+  }
+
+  const sendFile = async () => {
+    if (!pendingFile || !contact) return
+    setSendingMedia(true)
+    const name = pendingFile.split('/').pop() ?? 'archivo'
+    const ext = name.split('.').pop()?.toLowerCase() ?? ''
+    const isImage = ['jpg','jpeg','png','gif','webp'].includes(ext)
+    const body = isImage ? '📷 Imagen' : `📎 ${name}`
+    insertOptimistic(body, isImage ? 'image' : 'document')
+    setPendingFile(null)
+    try {
+      await window.api.sendMedia(contact.whatsappId, pendingFile)
+    } finally {
+      setSendingMedia(false)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -284,24 +339,50 @@ export function ChatPanel({ contactId, onClose }: Props) {
 
       {tab === 'chat' ? (
         <>
+          {/* #5 — Search bar */}
+          {showSearch && (
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50">
+              <span className="text-gray-400 text-sm shrink-0">🔍</span>
+              <input
+                ref={searchInputRef}
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Buscar en esta conversación…"
+                className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder-gray-400"
+              />
+              {searchTerm && (
+                <span className="text-[10px] text-gray-400 shrink-0">
+                  {messages.filter(m => m.body?.toLowerCase().includes(searchTerm.toLowerCase())).length} resultados
+                </span>
+              )}
+              <button onClick={() => { setShowSearch(false); setSearchTerm('') }} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+            </div>
+          )}
+
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1">
-            {hasMore && (
+            {hasMore && !searchTerm && (
               <div className="flex justify-center py-2">
                 <button
                   onClick={loadEarlier}
                   disabled={loading}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 shadow-sm transition-colors disabled:opacity-50"
                 >
-                  {loading
-                    ? <><span className="animate-spin">⏳</span> Cargando…</>
-                    : <>↑ Mensajes anteriores</>}
+                  {loading ? <><span className="animate-spin">⏳</span> Cargando…</> : <>↑ Mensajes anteriores</>}
                 </button>
               </div>
             )}
-            {messages.map(msg => (
-              <MessageBubble key={msg.id} message={msg} />
+            {(searchTerm
+              ? messages.filter(m => m.body?.toLowerCase().includes(searchTerm.toLowerCase()))
+              : messages
+            ).map(msg => (
+              <MessageBubble key={msg.whatsappMsgId} message={msg} highlight={searchTerm || undefined} />
             ))}
+            {searchTerm && messages.filter(m => m.body?.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+              <div className="flex items-center justify-center text-sm text-gray-400 py-8">
+                Sin resultados para "{searchTerm}"
+              </div>
+            )}
             <div ref={bottomRef} />
           </div>
 
@@ -325,16 +406,32 @@ export function ChatPanel({ contactId, onClose }: Props) {
             />
           )}
 
+          {/* #4 — Pending file preview bar */}
+          {pendingFile && (
+            <div className="mx-3 mb-2 flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl">
+              <span className="text-lg shrink-0">
+                {['jpg','jpeg','png','gif','webp'].includes(pendingFile.split('.').pop()?.toLowerCase() ?? '') ? '🖼️' : '📎'}
+              </span>
+              <span className="flex-1 truncate text-blue-800 text-xs">{pendingFile.split('/').pop()}</span>
+              <button onClick={sendFile} disabled={sendingMedia} className="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                {sendingMedia ? '…' : 'Enviar'}
+              </button>
+              <button onClick={() => setPendingFile(null)} className="text-blue-400 hover:text-blue-600 text-xs ml-1">✕</button>
+            </div>
+          )}
+
           {/* Input bar */}
           <div className="border-t border-gray-100 p-3">
             <div className="flex gap-2 items-end">
               <div className="flex gap-1">
-                <button onClick={() => setShowTemplates(!showTemplates)} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg text-sm" title="Plantillas">
-                  📋
-                </button>
-                <button onClick={fetchAI} className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg text-sm" title="Sugerencia IA">
-                  ✨
-                </button>
+                <button onClick={() => setShowTemplates(!showTemplates)} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg text-sm" title="Plantillas">📋</button>
+                <button onClick={fetchAI} className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg text-sm" title="Sugerencia IA (✨)">✨</button>
+                <button onClick={pickAndSendFile} className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg text-sm" title="Adjuntar imagen o archivo (📎)">📎</button>
+                <button
+                  onClick={() => { setShowSearch(v => !v); setTimeout(() => searchInputRef.current?.focus(), 50) }}
+                  className={`p-2 rounded-lg text-sm transition-colors ${showSearch ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}
+                  title="Buscar en chat (⌘F)"
+                >🔍</button>
               </div>
               <textarea
                 ref={inputRef}

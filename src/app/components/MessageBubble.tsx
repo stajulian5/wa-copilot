@@ -3,6 +3,7 @@ import type { Message } from '../../server/db/schema'
 
 interface Props {
   message: Message
+  highlight?: string   // search term to highlight in message body
 }
 
 const statusIcon = (status: Message['status']) => {
@@ -16,7 +17,21 @@ const statusIcon = (status: Message['status']) => {
   }
 }
 
-export function MessageBubble({ message }: Props) {
+function HighlightedText({ text, term }: { text: string; term?: string }) {
+  if (!term) return <>{text}</>
+  const parts = text.split(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'))
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.toLowerCase() === term.toLowerCase()
+          ? <mark key={i} className="bg-yellow-200 text-gray-900 rounded px-0.5">{p}</mark>
+          : p
+      )}
+    </>
+  )
+}
+
+export function MessageBubble({ message, highlight }: Props) {
   const isOut = message.direction === 'out'
   const time = format(new Date(message.timestamp), 'HH:mm')
 
@@ -79,7 +94,7 @@ export function MessageBubble({ message }: Props) {
           message.mediaUrl ? <img src={message.mediaUrl} alt="" className="w-24 h-24" /> : null
         ) : message.body ? (
           <p className="whitespace-pre-wrap break-words">
-            {message.body}
+            <HighlightedText text={message.body} term={highlight} />
             {message.isEdited && <span className="text-gray-400 text-xs ml-1 italic">editado</span>}
           </p>
         ) : (

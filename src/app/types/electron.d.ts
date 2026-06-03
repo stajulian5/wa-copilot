@@ -57,6 +57,9 @@ declare global {
       getExtensionPath: () => Promise<string>
       openExtensionInFinder: () => Promise<void>
       openChromeExtensions: () => Promise<void>
+
+      // File picker
+      pickFile: () => Promise<string | null>
     }
   }
 }

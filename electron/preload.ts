@@ -106,7 +106,10 @@ export const api = {
   // Chrome extension helpers
   getExtensionPath: () => ipcRenderer.invoke('app:getExtensionPath'),
   openExtensionInFinder: () => ipcRenderer.invoke('app:openExtensionInFinder'),
-  openChromeExtensions: () => ipcRenderer.invoke('app:openChromeExtensions')
+  openChromeExtensions: () => ipcRenderer.invoke('app:openChromeExtensions'),
+
+  // File picker (#4 send media)
+  pickFile: (): Promise<string | null> => ipcRenderer.invoke('app:pickFile')
 }
 
 contextBridge.exposeInMainWorld('api', api)

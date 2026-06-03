@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Notification, nativeTheme, Menu, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Notification, nativeTheme, Menu, shell, dialog } from 'electron'
 
 app.setName('WhatsApp Copilot')
 // Pin userData to a stable path so re-naming the app never loses data
@@ -160,6 +160,24 @@ ipcMain.handle('set-badge', (_e, count: number) => {
 })
 
 ipcMain.handle('get-user-data-path', () => userData)
+
+// ─── File picker (#4 send media) ─────────────────────────────────────────────
+
+ipcMain.handle('app:pickFile', async () => {
+  if (!mainWindow) return null
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    filters: [
+      { name: 'Imágenes',   extensions: ['jpg','jpeg','png','gif','webp'] },
+      { name: 'Videos',     extensions: ['mp4','mov','avi','mkv'] },
+      { name: 'Audio',      extensions: ['mp3','ogg','wav','m4a','opus'] },
+      { name: 'Documentos', extensions: ['pdf','doc','docx','xlsx','xls','pptx','ppt','csv','txt'] },
+      { name: 'Todos',      extensions: ['*'] },
+    ]
+  })
+  if (result.canceled || !result.filePaths.length) return null
+  return result.filePaths[0]
+})
 
 // ─── Chrome extension helpers ─────────────────────────────────────────────────
 
