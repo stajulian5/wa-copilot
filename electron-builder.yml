@@ -32,6 +32,10 @@ mac:
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
+  # Notarization — Team ID from Developer ID cert (visible in build log)
+  # Requires env vars: APPLE_ID and APPLE_APP_SPECIFIC_PASSWORD
+  notarize:
+    teamId: G89F25BQ2M
 
 dmg:
   title: WhatsApp Copilot
