@@ -1,17 +1,50 @@
 appId: com.mica.wacopilot
 productName: WhatsApp Copilot
+copyright: Copyright © 2024 Mica
+
 directories:
   buildResources: build
   output: dist
+
 files:
   - out/**/*
+
+# ── macOS ──────────────────────────────────────────────────────────────────────
 mac:
+  # Universal covers both Apple Silicon (M1/M2/M3) and Intel Macs
   target:
     - target: dmg
-      arch: arm64
+      arch:
+        - arm64
+        - x64
   category: public.app-category.business
   darkModeSupport: true
+  icon: build/icon.icns
+  # Required for notarization
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+
+dmg:
+  title: WhatsApp Copilot
+  icon: build/icon.icns
+  # Drag-to-Applications install window
+  window:
+    width: 540
+    height: 380
+  contents:
+    - x: 140
+      y: 190
+      type: file
+    - x: 400
+      y: 190
+      type: link
+      path: /Applications
+  iconSize: 100
+
 publish:
   provider: github
   owner: stajulian5
   repo: wa-copilot
+  releaseType: release

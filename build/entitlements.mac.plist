@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <!-- Allow outbound network connections (WhatsApp WebSocket, API calls) -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <!-- Allow inbound connections (local Express server) -->
+    <key>com.apple.security.network.server</key>
+    <true/>
+    <!-- Required for hardened runtime with Electron's JIT compilation -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <!-- Allow unsigned executable memory (required by Electron) -->
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <!-- Allow dyld environment variables (required by Electron) -->
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
+    <!-- Keychain access for storing the Anthropic API key -->
+    <key>com.apple.security.keychain-access-groups</key>
+    <array>
+      <string>$(AppIdentifierPrefix)com.mica.wacopilot</string>
+    </array>
+  </dict>
+</plist>

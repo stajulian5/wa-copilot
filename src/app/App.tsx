@@ -95,12 +95,13 @@ export default function App() {
   useWhatsApp(
     (s) => {
       setWaStatus(s)
-      if (s === 'connected') {
+      // Navigation away from onboarding is now handled inside OnboardingPage itself
+      // (via the onComplete prop). We only need to handle the settings→kanban case here.
+      if (s === 'connected' && page !== 'linking') {
         setOnboardingQR(null)
-        setPage(p => p === 'linking' ? 'kanban' : p)
       }
     },
-    () => setLastSyncAt(new Date())   // called on every incoming message
+    () => setLastSyncAt(new Date())
   )
   useSnooze()
 
@@ -128,6 +129,11 @@ export default function App() {
         waStatus={waStatus}
         initialQr={onboardingQR}
         onQRReceived={setOnboardingQR}
+        isRelink={page === 'linking'}
+        onComplete={() => {
+          setOnboardingQR(null)
+          setPage('kanban')
+        }}
       />
     )
   }
