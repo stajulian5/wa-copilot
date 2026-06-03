@@ -16,10 +16,10 @@
       --ink:          #0e0e0e;
       --ink2:         #3a3a3a;
       --muted:        #888888;
-      --accent:       #25D366;           /* single green — WhatsApp brand */
-      --accent-hover: #1db954;           /* one shade darker for hover */
-      --accent-light: #e8f9ee;
-      --accent-text:  #14803c;           /* dark green for text on light bg */
+      --accent:       #166534;           /* deep forest green — control & confidence */
+      --accent-hover: #14532d;           /* darker on hover */
+      --accent-light: #f0fdf4;           /* very light green tint */
+      --accent-text:  #166534;           /* same dark green for text */
       --border:       #e8e8e8;
       --shadow:       0 2px 12px rgba(0,0,0,.07), 0 1px 3px rgba(0,0,0,.05);
       --shadow-lg:    0 20px 60px rgba(0,0,0,.12), 0 4px 16px rgba(0,0,0,.06);
@@ -67,7 +67,7 @@
       position: relative; overflow: hidden;
     }
     .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .4; pointer-events: none; z-index: 0; }
-    .blob-1 { width: 600px; height: 600px; background: #b7f5ce; top: -150px; right: -150px; }
+    .blob-1 { width: 600px; height: 600px; background: #bbf7d0; top: -150px; right: -150px; }
     .blob-2 { width: 500px; height: 500px; background: #f5f0e8; bottom: -50px; left: -100px; }
     .blob-3 { width: 350px; height: 350px; background: #fff3b7; bottom: 120px; right: 12%; }
     .hero-inner { position: relative; z-index: 1; max-width: 800px; }
@@ -252,7 +252,7 @@
     .mk-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
     .mk-time { font-size: 8.5px; color: #bbb; }
     .mk-badge {
-      background: #25D366; color: #fff; font-size: 8px; font-weight: 900;
+      background: var(--accent); color: #fff; font-size: 8px; font-weight: 900;
       border-radius: 999px; padding: 1px 6px; min-width: 16px; text-align: center;
     }
     .mk-badge.gray { background: #eee; color: #aaa; }
@@ -431,8 +431,8 @@
       padding: 120px 40px; position: relative; overflow: hidden;
     }
     .cta-blob { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
-    .cta-blob-1 { width: 500px; height: 500px; background: rgba(37,211,102,.22); top: -100px; left: 10%; }
-    .cta-blob-2 { width: 400px; height: 400px; background: rgba(18,140,126,.18); bottom: -100px; right: 10%; }
+    .cta-blob-1 { width: 500px; height: 500px; background: rgba(22,101,52,.28); top: -100px; left: 10%; }
+    .cta-blob-2 { width: 400px; height: 400px; background: rgba(22,101,52,.15); bottom: -100px; right: 10%; }
     .cta-inner { position: relative; z-index: 1; }
     .cta h2 {
       font-size: clamp(36px, 6vw, 72px); font-weight: 900;
@@ -637,22 +637,30 @@
     <!-- WhatsApp + WhatsApp Business logos -->
     <div class="hero-integrations">
       <div class="integration-badge">
-        <!-- WhatsApp icon -->
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="12" fill="#25D366"/>
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="white"/>
+        <!-- Official WhatsApp icon -->
+        <svg width="20" height="20" viewBox="0 0 175.216 175.552" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="wa-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#166534"/>
+            <stop offset="100%" stop-color="#14532d"/>
+          </linearGradient></defs>
+          <path d="M87.608 0C39.231 0 0 39.231 0 87.608c0 15.177 3.928 29.476 10.821 41.89L.344 175.552l47.26-10.369c12.016 6.291 25.703 9.869 40.204 9.869 48.377 0 87.608-39.231 87.608-87.608S135.985 0 87.608 0z" fill="url(#wa-grad)"/>
+          <path d="M127.64 104.457c-1.99-1.021-11.778-5.806-13.604-6.472-1.826-.666-3.153-.997-4.482 1.01-1.328 2.006-5.143 6.472-6.305 7.8-1.162 1.329-2.324 1.495-4.314.498-1.991-.997-8.407-3.1-16.02-9.882-5.92-5.27-9.914-11.78-11.077-13.77-1.162-1.99-.124-3.067.874-4.06.896-.893 1.99-2.327 2.987-3.49.997-1.163 1.328-1.993 1.993-3.323.664-1.33.332-2.49-.166-3.49-.498-.997-4.482-10.806-6.14-14.797-1.619-3.885-3.258-3.358-4.482-3.42-.997-.055-2.325-.067-3.653-.067-1.33 0-3.487.498-5.313 2.49-1.826 1.99-6.97 6.804-6.97 16.612 0 9.806 7.136 19.278 8.132 20.607.997 1.33 14.048 21.437 34.03 30.066 4.754 2.052 8.46 3.276 11.352 4.194 4.773 1.517 9.118 1.303 12.553.79 3.83-.571 11.778-4.814 13.438-9.463 1.659-4.648 1.659-8.633 1.162-9.463-.498-.832-1.826-1.33-3.817-2.35z" fill="#fff"/>
         </svg>
         WhatsApp
       </div>
       <span class="integration-plus">+</span>
       <div class="integration-badge">
-        <!-- WhatsApp Business icon -->
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="12" fill="#25D366"/>
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="white"/>
-          <!-- Business "B" badge -->
-          <circle cx="17.5" cy="6.5" r="5" fill="white"/>
-          <text x="17.5" y="9.5" text-anchor="middle" font-size="6" font-weight="900" fill="#25D366" font-family="Arial,sans-serif">B</text>
+        <!-- Official WhatsApp Business icon -->
+        <svg width="20" height="20" viewBox="0 0 175.216 175.552" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="wab-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#166534"/>
+            <stop offset="100%" stop-color="#14532d"/>
+          </linearGradient></defs>
+          <path d="M87.608 0C39.231 0 0 39.231 0 87.608c0 15.177 3.928 29.476 10.821 41.89L.344 175.552l47.26-10.369c12.016 6.291 25.703 9.869 40.204 9.869 48.377 0 87.608-39.231 87.608-87.608S135.985 0 87.608 0z" fill="url(#wab-grad)"/>
+          <path d="M127.64 104.457c-1.99-1.021-11.778-5.806-13.604-6.472-1.826-.666-3.153-.997-4.482 1.01-1.328 2.006-5.143 6.472-6.305 7.8-1.162 1.329-2.324 1.495-4.314.498-1.991-.997-8.407-3.1-16.02-9.882-5.92-5.27-9.914-11.78-11.077-13.77-1.162-1.99-.124-3.067.874-4.06.896-.893 1.99-2.327 2.987-3.49.997-1.163 1.328-1.993 1.993-3.323.664-1.33.332-2.49-.166-3.49-.498-.997-4.482-10.806-6.14-14.797-1.619-3.885-3.258-3.358-4.482-3.42-.997-.055-2.325-.067-3.653-.067-1.33 0-3.487.498-5.313 2.49-1.826 1.99-6.97 6.804-6.97 16.612 0 9.806 7.136 19.278 8.132 20.607.997 1.33 14.048 21.437 34.03 30.066 4.754 2.052 8.46 3.276 11.352 4.194 4.773 1.517 9.118 1.303 12.553.79 3.83-.571 11.778-4.814 13.438-9.463 1.659-4.648 1.659-8.633 1.162-9.463-.498-.832-1.826-1.33-3.817-2.35z" fill="#fff"/>
+          <!-- Business badge: small white circle with B in top-right -->
+          <circle cx="143" cy="33" r="28" fill="white"/>
+          <text x="143" y="42" text-anchor="middle" font-size="30" font-weight="900" fill="#166534" font-family="-apple-system,Arial,sans-serif">B</text>
         </svg>
         WhatsApp Business
       </div>
@@ -975,7 +983,7 @@
         <div class="me-thread-from">Sent by Ana · 10:45 AM</div>
       </div>
       <div class="me-members">
-        <div class="me-avatar-sm" style="background:#25D366;">A</div>
+        <div class="me-avatar-sm" style="background:#166534;">A</div>
         <div class="me-avatar-sm" style="background:#6366f1;">J</div>
         <div class="me-members-label">Ana + Julian now handling this conversation</div>
       </div>
