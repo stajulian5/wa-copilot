@@ -504,6 +504,80 @@
     .for-card.kam     .for-list li::before { color: #6366f1; }
     @media (max-width: 960px) { .for-grid { grid-template-columns: 1fr; } }
 
+    /* ─── Stats strip ───────────────────────────────────────────────────────── */
+    .stats-strip {
+      background: var(--white);
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    }
+    .stats-inner {
+      max-width: 1160px; margin: 0 auto; padding: 64px 40px;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    }
+    .stat-item {
+      text-align: center; padding: 0 24px;
+      border-right: 1px solid var(--border);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-num {
+      font-size: clamp(40px, 5vw, 60px); font-weight: 900;
+      letter-spacing: -.04em; line-height: 1; color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .stat-num span { color: var(--accent); }
+    .stat-label { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .stat-source { font-size: 10px; color: #ccc; margin-top: 6px; }
+    @media (max-width: 960px) {
+      .stats-inner { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .stat-item { border-right: none; }
+    }
+
+    /* ─── Escalation mockup ─────────────────────────────────────────────────── */
+    .mock-escalate {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 20px; overflow: hidden; box-shadow: var(--shadow-lg);
+    }
+    .me-header {
+      background: #f2f2f2; border-bottom: 1px solid #e8e8e8;
+      padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 600; color: #555;
+    }
+    .me-chat { padding: 12px 14px; background: #f9f8f5; display: flex; flex-direction: column; gap: 7px; }
+    .me-bubble {
+      max-width: 78%; padding: 7px 11px; border-radius: 12px; font-size: 11px; line-height: 1.5;
+    }
+    .me-bubble.in  { background: #fff; border: 1px solid #ebebeb; border-bottom-left-radius: 3px; align-self: flex-start; }
+    .me-bubble.out { background: #dcf8c6; border-bottom-right-radius: 3px; align-self: flex-end; }
+    .me-time { font-size: 9px; color: #aaa; text-align: right; margin-top: 3px; }
+    .me-escalate-btn {
+      margin: 0 14px 12px;
+      display: flex; align-items: center; gap: 10px;
+      background: #fff3cd; border: 1px solid #ffc107;
+      border-radius: 12px; padding: 10px 14px; cursor: pointer;
+      font-size: 11px;
+    }
+    .me-escalate-icon { font-size: 18px; flex-shrink: 0; }
+    .me-escalate-text strong { display: block; font-size: 12px; font-weight: 800; color: #111; margin-bottom: 1px; }
+    .me-escalate-text span { color: #777; }
+    .me-thread {
+      margin: 0 14px 14px;
+      background: #f0f4ff; border: 1px solid #c7d7ff;
+      border-radius: 12px; padding: 10px 12px;
+    }
+    .me-thread-label { font-size: 9.5px; font-weight: 800; color: #4361ee; letter-spacing: .05em; margin-bottom: 6px; }
+    .me-thread-msg { font-size: 11px; color: #333; line-height: 1.5; }
+    .me-thread-from { font-size: 9px; color: #888; margin-top: 5px; }
+    .me-members {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 14px; border-top: 1px solid #ebebeb;
+      background: #fff;
+    }
+    .me-avatar-sm {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 800; color: #fff; flex-shrink: 0;
+    }
+    .me-members-label { font-size: 10px; color: #aaa; }
+
     /* Mobile warning */
     #mobile-warning { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.6); align-items: center; justify-content: center; padding: 24px; }
     #mobile-warning.show { display: flex; }
@@ -535,13 +609,13 @@
   <div class="hero-inner">
     <div class="hero-badge">✈️ macOS · WhatsApp · Open source</div>
     <h1>
-      WhatsApp is your<br/>
-      support channel.<br/>
-      <span class="accent">Treat it like one.</span>
+      Customer service<br/>
+      through WhatsApp —<br/>
+      <span class="accent">done right.</span>
     </h1>
     <p class="hero-tagline">
-      <strong>WhatsApp Copilot turns your WhatsApp into a structured workspace.</strong><br/>
-      Visual pipeline, integrated chat, AI-powered replies — built for teams who do customer service and account management over WhatsApp.
+      <strong>WhatsApp Copilot is the operations layer your support team was missing.</strong><br/>
+      Handle hundreds of parallel conversations without dropping the ball — with a visual pipeline, AI-assisted replies, and instant escalation to managers or colleagues.
     </p>
 
     <div class="hero-stats">
@@ -581,39 +655,65 @@
   <span class="marquee-item"><span class="marquee-dot">✦</span> Open source</span>
 </div></div>
 
+<!-- Stats strip -->
+<div class="stats-strip">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <div class="stat-num">98<span>%</span></div>
+      <div class="stat-label">WhatsApp message open rate — vs. 20% for email</div>
+      <div class="stat-source">Meta for Business</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">64<span>%</span></div>
+      <div class="stat-label">of customers prefer messaging over phone for support</div>
+      <div class="stat-source">Salesforce State of Connected Customer</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">3<span>×</span></div>
+      <div class="stat-label">faster resolution time vs. email-based support</div>
+      <div class="stat-source">Zendesk Benchmark Report</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">2<span>B+</span></div>
+      <div class="stat-label">monthly active WhatsApp users — where your clients already are</div>
+      <div class="stat-source">WhatsApp, 2024</div>
+    </div>
+  </div>
+</div>
+
 <!-- Who it's for -->
 <div class="for-section">
   <div class="section-eyebrow">Who it's for</div>
-  <h2>Two teams. One broken workflow.<br/>One fix.</h2>
-  <p class="sub">WhatsApp Copilot works for any team that manages ongoing conversations at scale.</p>
+  <h2>Built for teams who run<br/>customer relationships over WhatsApp.</h2>
+  <p class="sub">Whether you're handling inbound support or managing a portfolio of accounts, Copilot gives you the operational structure WhatsApp was never designed to provide.</p>
 
   <div class="for-grid">
 
     <div class="for-card support">
       <span class="for-icon">🎧</span>
       <div class="for-tag">Customer Support</div>
-      <h3>Turn WhatsApp into a support desk.</h3>
-      <p>Clients expect answers on WhatsApp. Without structure, inbound requests pile up, response times slip, and issues fall through the cracks. Copilot gives your support team a shared view and a clear workflow.</p>
+      <h3>Run a proper support operation over WhatsApp.</h3>
+      <p>Your clients are already on WhatsApp. Now give your support team the structure to handle hundreds of conversations in parallel — with full visibility, clear ownership, and fast resolution.</p>
       <ul class="for-list">
-        <li>Every inbound request becomes a card in the pipeline</li>
-        <li>Move from Open → Waiting → Resolved as you work each case</li>
-        <li>AI drafts context-aware replies to speed up resolution</li>
-        <li>No client waiting for a reply ever disappears from view</li>
-        <li>Search any past conversation in seconds with ⌘F</li>
+        <li>Every inbound request lands as a card in the pipeline</li>
+        <li>Track every case from Open → Waiting For → Resolved</li>
+        <li>AI drafts context-aware replies to cut resolution time</li>
+        <li>Escalate complex cases to a manager or colleague instantly</li>
+        <li>No request ever disappears — auto-reopen on new replies</li>
       </ul>
     </div>
 
     <div class="for-card kam">
       <span class="for-icon">🤝</span>
       <div class="for-tag">Account Management</div>
-      <h3>Stay on top of every client relationship.</h3>
-      <p>KAMs managing 50+ client relationships over WhatsApp have no native way to track who's active, who needs a follow-up, and who's gone quiet. Copilot gives you the pipeline view WhatsApp was never designed to provide.</p>
+      <h3>Manage 50+ client relationships with the same quality.</h3>
+      <p>KAMs handling large portfolios over WhatsApp need more than a chat list. Copilot gives you a structured view of every relationship — who's active, who needs a follow-up, and who's ready to close.</p>
       <ul class="for-list">
-        <li>Visual pipeline shows every relationship's current stage</li>
-        <li>When a client replies, their card automatically reopens</li>
-        <li>Snooze conversations and revisit them at the right moment</li>
-        <li>AI suggestions written in your voice for faster outreach</li>
-        <li>Full message history and notes on every contact</li>
+        <li>Visual pipeline shows every account's current stage</li>
+        <li>Client replies automatically reopen resolved conversations</li>
+        <li>Snooze and follow up at exactly the right moment</li>
+        <li>AI suggestions in your voice for faster, better outreach</li>
+        <li>Loop in a colleague for second opinions or handoffs</li>
       </ul>
     </div>
 
@@ -624,23 +724,23 @@
 <div class="problem-section">
   <div class="problem-inner">
     <div class="problem-text">
-      <div class="section-eyebrow" style="background:rgba(255,79,79,.1);color:#c0392b;">The problem</div>
-      <h2>WhatsApp is a messaging app. Not a CRM. Not a support desk.</h2>
-      <p>Whether you're handling inbound support or managing a portfolio of client relationships, WhatsApp gives you the same thing: an infinite scroll of conversations with no structure, no status, and no visibility.</p>
-      <p>The most important conversations disappear into the noise. And the people waiting for you have no idea if anyone is even looking.</p>
+      <div class="section-eyebrow" style="background:rgba(37,211,102,.12);color:var(--accent-dark);">The opportunity</div>
+      <h2>Your clients are already on WhatsApp.<br/>Now bring the operation up to match.</h2>
+      <p>WhatsApp has a 98% open rate and is the preferred support channel for the majority of customers. The channel is right. What's missing is the operational layer that lets your team handle it at scale — consistently, and without burning out.</p>
+      <p>Copilot is that layer.</p>
     </div>
     <div class="pain-cards">
       <div class="pain-card">
-        <h3>Requests get buried</h3>
-        <p>A client sent something three days ago. You saw it, thought "I'll reply later" — it sank to the bottom of the list. They're still waiting. You don't even know.</p>
+        <h3>Scale without adding headcount</h3>
+        <p>A structured pipeline and AI-assisted replies let one person handle 3× more conversations at the same quality — without dropping a single thread.</p>
       </div>
       <div class="pain-card">
-        <h3>No visibility into what's open</h3>
-        <p>How many conversations are actively waiting for a response? Which clients haven't heard from you in two weeks? WhatsApp can't answer those questions.</p>
+        <h3>Full visibility at all times</h3>
+        <p>See every open request, every waiting case, and every resolved conversation. No more guessing what's pending or who's been waiting the longest.</p>
       </div>
       <div class="pain-card">
-        <h3>Replying at volume is exhausting</h3>
-        <p>When you have 50+ conversations, every reply starts from zero — no context, no history at a glance, no help. It takes twice as long as it should.</p>
+        <h3>Escalate when it matters</h3>
+        <p>Complex cases shouldn't stall. Loop in a manager or specialist with one click — they get the full context and can jump in immediately.</p>
       </div>
     </div>
   </div>
@@ -809,6 +909,51 @@
 </div>
 <hr class="showcase-divider" />
 
+<!-- ── Feature 4: Escalation ── -->
+<div class="showcase flip" id="escalate">
+  <div class="showcase-text">
+    <div class="eyebrow">Escalation</div>
+    <h2>Loop in a manager or colleague in one click.</h2>
+    <p>Some conversations need a second opinion, a senior decision, or a handoff to a specialist. Copilot lets you escalate any conversation instantly — the recipient gets the full context and can respond right away.</p>
+    <ul>
+      <li>Escalate to any team member directly from the chat panel</li>
+      <li>Full conversation history shared automatically — no copy-paste</li>
+      <li>Managers can review and respond without leaving Copilot</li>
+      <li>Nothing stalls because one person is blocked or unavailable</li>
+      <li>Keep a record of who handled each escalation</li>
+    </ul>
+  </div>
+  <div>
+    <div class="mock-escalate">
+      <div class="me-header">
+        <span>💬</span> Sarah Mitchell · <span style="color:var(--accent)">Open</span>
+      </div>
+      <div class="me-chat">
+        <div class="me-bubble in">I need to speak to a manager about my contract — this has been going on for two weeks.<div class="me-time">10:43</div></div>
+        <div class="me-bubble out">Hi Sarah, I completely understand. Let me loop in my manager right now so we can resolve this today.<div class="me-time">10:44 ✓✓</div></div>
+      </div>
+      <div class="me-escalate-btn">
+        <div class="me-escalate-icon">⚡</div>
+        <div class="me-escalate-text">
+          <strong>Escalate conversation</strong>
+          <span>Send full context to a manager or colleague</span>
+        </div>
+      </div>
+      <div class="me-thread">
+        <div class="me-thread-label">📨 ESCALATED TO JULIAN (MANAGER)</div>
+        <div class="me-thread-msg">"Sarah has been waiting 2 weeks for her contract update. She's frustrated and asking to speak with management. Full thread attached — needs resolution today."</div>
+        <div class="me-thread-from">Sent by Ana · 10:45 AM</div>
+      </div>
+      <div class="me-members">
+        <div class="me-avatar-sm" style="background:#25D366;">A</div>
+        <div class="me-avatar-sm" style="background:#6366f1;">J</div>
+        <div class="me-members-label">Ana + Julian now handling this conversation</div>
+      </div>
+    </div>
+  </div>
+</div>
+<hr class="showcase-divider" />
+
 <!-- Setup -->
 <div class="steps-section" id="setup">
   <div class="steps-inner">
@@ -876,8 +1021,8 @@
 <div class="cta">
   <div class="cta-blob cta-blob-1"></div><div class="cta-blob cta-blob-2"></div>
   <div class="cta-inner">
-    <h2>Your clients deserve<br/><span>a real answer.</span></h2>
-    <p>Free. Local. No subscription. No setup fees.</p>
+    <h2>Take your WhatsApp<br/><span>support to the next level.</span></h2>
+    <p>Free. Local. No subscription. Works with your existing WhatsApp number.</p>
     <a class="btn-cta" id="cta-btn" href="https://github.com/stajulian5/wa-copilot/releases/latest">
       ⬇ Download WhatsApp Copilot
     </a>
