@@ -5,20 +5,82 @@ import { MessageBubble } from './MessageBubble'
 import { AISuggestion } from './AISuggestion'
 import { SnoozeModal } from './SnoozeModal'
 import { TemplatesPicker } from './TemplatesPicker'
-import type { Message } from '../../server/db/schema'
+import type { Contact, Message } from '../../server/db/schema'
 
 const PORT = () => window.api?.serverPort ?? 3847
 
+// ── Avatar (mirrors ContactCard logic) ────────────────────────────────────────
+
+const AVATAR_COLORS = [
+  '#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b',
+  '#ef4444', '#ec4899', '#06b6d4', '#84cc16'
+]
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0][0].toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
+function PanelAvatar({ contact, size }: { contact: Contact; size: number }) {
+  const [imgFailed, setImgFailed] = useState(false)
+  const port = window.api?.serverPort ?? 3847
+  const displayName = contact.name ?? contact.phone ?? ''
+
+  // Retry when new avatars are downloaded
+  useEffect(() => {
+    const off = window.api.onHistorySynced(() => setImgFailed(false))
+    return off
+  }, [])
+
+  if (!imgFailed) {
+    return (
+      <img
+        src={`http://127.0.0.1:${port}/avatars/${contact.id}`}
+        alt={displayName}
+        onError={() => setImgFailed(true)}
+        className="rounded-full object-cover shrink-0"
+        style={{ width: size, height: size }}
+      />
+    )
+  }
+
+  if (contact.isGroup) {
+    return (
+      <div className="rounded-full flex items-center justify-center shrink-0 bg-gray-400" style={{ width: size, height: size }}>
+        <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 24 24" fill="white">
+          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+        </svg>
+      </div>
+    )
+  }
+
+  const bg = AVATAR_COLORS[contact.id % AVATAR_COLORS.length]
+  const initials = getInitials(displayName || '?')
+  return (
+    <div
+      className="rounded-full flex items-center justify-center shrink-0 text-white font-semibold"
+      style={{ width: size, height: size, backgroundColor: bg, fontSize: size * 0.36 }}
+    >
+      {initials}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function formatFallbackName(whatsappId: string, phone: string | null): string {
-  if (whatsappId.endsWith('@lid')) return 'Contacto WA'  // LID ≠ phone number
-  if (!phone) return whatsappId
-  if (phone.startsWith('521') && phone.length === 13) {
-    return `+52 1 ${phone.slice(3, 6)} ${phone.slice(6, 9)} ${phone.slice(9)}`
+  if (phone) {
+    // Normalize old MX mobile format: 521XXXXXXXXXX → 52XXXXXXXXXX
+    let p = phone
+    if (p.startsWith('521') && p.length === 13) p = '52' + p.slice(3)
+    if (p.startsWith('52') && p.length === 12)
+      return `+52 ${p.slice(2, 5)} ${p.slice(5, 8)} ${p.slice(8)}`
+    return `+${p}`
   }
-  if (phone.startsWith('52') && phone.length === 12) {
-    return `+52 ${phone.slice(2, 4)} ${phone.slice(4, 8)} ${phone.slice(8)}`
-  }
-  return `+${phone}`
+  if (whatsappId.endsWith('@lid')) return 'Usuario privado'
+  return whatsappId
 }
 
 interface Props {
@@ -44,18 +106,24 @@ export function ChatPanel({ contactId, onClose }: Props) {
   const [aiLoading, setAiLoading] = useState(false)
   const [showSnooze, setShowSnooze] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
-  const [editingName, setEditingName] = useState(false)
-  const [nameValue, setNameValue] = useState(contact?.name ?? '')
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   // Load initial messages + mark read
   useEffect(() => {
+    setHasMore(true) // reset on contact switch
     if (!messages.length) {
       fetch(`http://127.0.0.1:${PORT()}/messages/${contactId}`)
         .then(r => r.json())
-        .then((msgs: Message[]) => { setMessages(contactId, msgs); setHasMore(msgs.length === 20) })
+        .then((msgs: Message[]) => {
+          setMessages(contactId, msgs)
+          // If we got fewer than a full page, there's nothing older in the DB
+          if (msgs.length < 20) setHasMore(false)
+        })
+    } else {
+      // Messages already cached — check if there could be older ones
+      if (messages.length < 20) setHasMore(false)
     }
     fetch(`http://127.0.0.1:${PORT()}/contacts/${contactId}/read`, { method: 'POST' })
     updateContact(contactId, { unreadCount: 0 })
@@ -84,7 +152,8 @@ export function ChatPanel({ contactId, onClose }: Props) {
     const url = `http://127.0.0.1:${PORT()}/messages/${contactId}?before=${new Date(oldest.timestamp).getTime()}`
     const older = await fetch(url).then(r => r.json()) as Message[]
     prependMessages(contactId, older)
-    setHasMore(older.length === 20)
+    // Hide the button only when there's truly nothing left to load
+    if (older.length === 0) setHasMore(false)
     setLoading(false)
   }
 
@@ -126,16 +195,6 @@ export function ChatPanel({ contactId, onClose }: Props) {
     updateContact(contactId, { notes })
   }
 
-  const saveName = () => {
-    setEditingName(false)
-    fetch(`http://127.0.0.1:${PORT()}/contacts/${contactId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: nameValue })
-    })
-    updateContact(contactId, { name: nameValue })
-  }
-
   if (!contact) return null
 
   return (
@@ -144,26 +203,18 @@ export function ChatPanel({ contactId, onClose }: Props) {
       {/* Contact header */}
       <div className="px-4 pt-12 pb-3 border-b border-gray-100 bg-gray-50">
         <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            {editingName ? (
-              <input
-                autoFocus
-                value={nameValue}
-                onChange={e => setNameValue(e.target.value)}
-                onBlur={saveName}
-                onKeyDown={e => e.key === 'Enter' && saveName()}
-                className="font-semibold text-gray-900 text-base border-b border-gray-300 outline-none bg-transparent w-full"
-              />
-            ) : (
-              <h2
-                className="font-semibold text-gray-900 text-base truncate cursor-pointer hover:opacity-70"
-                onClick={() => setEditingName(true)}
-                title="Click para editar"
-              >
-                {contact.name ?? formatFallbackName(contact.whatsappId, contact.phone)}
-              </h2>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <PanelAvatar contact={contact} size={42} />
+            <div className="flex-1 min-w-0">
+            <h2 className="font-semibold text-gray-900 text-base truncate">
+              {contact.name ?? formatFallbackName(contact.whatsappId, contact.phone)}
+            </h2>
+            {/* Only show phone if it looks like a real number (not an @lid numeric ID) */}
+            {contact.phone && !contact.whatsappId.endsWith('@lid') && (
+              <p className="text-xs text-gray-400 mt-0.5">
+                {formatFallbackName(contact.whatsappId, contact.phone)}
+              </p>
             )}
-            <p className="text-xs text-gray-400 mt-0.5">{contact.phone}</p>
 
             {/* Property (inline editable) */}
             <div className="mt-1">
@@ -175,7 +226,8 @@ export function ChatPanel({ contactId, onClose }: Props) {
                 className="text-xs text-blue-600 bg-transparent outline-none placeholder-gray-300 w-full"
               />
             </div>
-          </div>
+            </div>{/* end text content */}
+          </div>{/* end avatar+text row */}
 
           <div className="flex items-center gap-2 ml-3">
             {/* Snooze */}
@@ -183,7 +235,7 @@ export function ChatPanel({ contactId, onClose }: Props) {
               🔔
             </button>
             {/* Close */}
-            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg" title="Cerrar (Esc)">
               ✕
             </button>
           </div>
@@ -235,9 +287,17 @@ export function ChatPanel({ contactId, onClose }: Props) {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1">
             {hasMore && (
-              <button onClick={loadEarlier} disabled={loading} className="text-xs text-center text-blue-500 hover:underline py-1">
-                {loading ? 'Cargando…' : 'Mensajes anteriores'}
-              </button>
+              <div className="flex justify-center py-2">
+                <button
+                  onClick={loadEarlier}
+                  disabled={loading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 shadow-sm transition-colors disabled:opacity-50"
+                >
+                  {loading
+                    ? <><span className="animate-spin">⏳</span> Cargando…</>
+                    : <>↑ Mensajes anteriores</>}
+                </button>
+              </div>
             )}
             {messages.map(msg => (
               <MessageBubble key={msg.id} message={msg} />
@@ -290,6 +350,7 @@ export function ChatPanel({ contactId, onClose }: Props) {
                 onClick={() => sendText(input)}
                 disabled={!input.trim()}
                 className="p-2 bg-gray-900 text-white rounded-xl hover:bg-gray-700 disabled:opacity-30 transition-all"
+                title="Enviar (Enter)"
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M14 8L2 2l3 6-3 6 12-6z" fill="currentColor" />

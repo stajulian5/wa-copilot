@@ -1,11 +1,24 @@
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core'
 
+// ─── accounts ────────────────────────────────────────────────────────────────
+// Each row = one linked WhatsApp number. All sessions connect simultaneously.
+
+export const accounts = sqliteTable('accounts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  jid: text('jid').unique(),                        // e.g. 521234@s.whatsapp.net — null until first QR scan
+  label: text('label').notNull().default('Mi número'),
+  authDir: text('auth_dir').notNull(),              // 'baileys_auth' for account 1, 'baileys_auth_N' for others
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(false),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date())
+})
+
 // ─── contacts ────────────────────────────────────────────────────────────────
 
 export const contacts = sqliteTable('contacts', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  accountId: integer('account_id').notNull().default(1),  // which WA account this belongs to
   whatsappId: text('whatsapp_id').notNull().unique(), // full JID e.g. 521234567890@s.whatsapp.net
-  phone: text('phone').notNull(),
+  phone: text('phone'),                             // null for groups and @lid contacts
   name: text('name'),          // KAM-set display name; null = use formatted phone
   sheetName: text('sheet_name'), // name pulled from Atlas sheet
   profilePic: text('profile_pic'), // URL from WA
@@ -22,6 +35,7 @@ export const contacts = sqliteTable('contacts', {
   lastMessage: text('last_message'),
   lastMessageAt: integer('last_message_at', { mode: 'timestamp_ms' }),
   lastMessageDirection: text('last_message_direction', { enum: ['in', 'out'] }),
+  lastMessageSenderName: text('last_message_sender_name'), // for group previews: "~ Chris: hello"
   unreadCount: integer('unread_count').notNull().default(0),
 
   // KAM metadata
@@ -67,6 +81,8 @@ export const messages = sqliteTable('messages', {
   isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
   reactionEmoji: text('reaction_emoji'), // for reaction-type messages
   quotedMsgId: text('quoted_msg_id'),   // message this replies to
+  senderName: text('sender_name'),      // for group messages: display name of the individual sender
+  senderJid: text('sender_jid'),        // for group messages: WA JID of the individual sender (key.participant)
 
   // Ghost-write audit (Phase 2)
   sentByManagerId: text('sent_by_manager_id'),
@@ -115,6 +131,8 @@ export const apiUsage = sqliteTable('api_usage', {
 
 // ─── types ───────────────────────────────────────────────────────────────────
 
+export type Account = typeof accounts.$inferSelect
+export type InsertAccount = typeof accounts.$inferInsert
 export type Contact = typeof contacts.$inferSelect
 export type InsertContact = typeof contacts.$inferInsert
 export type Message = typeof messages.$inferSelect

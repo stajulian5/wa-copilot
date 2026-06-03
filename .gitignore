@@ -5,3 +5,14 @@ dist/
 *.sqlite-shm
 *.sqlite-wal
 .DS_Store
+
+# WhatsApp session tokens — never commit these
+baileys_auth/
+baileys_auth_*/
+
+# User config (contains server port, etc.)
+config.json
+
+# Environment / secrets
+.env
+.env.local

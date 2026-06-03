@@ -4,32 +4,54 @@ import type { ToneAttribute } from '../stores/settingsStore'
 
 interface Props {
   onBack: () => void
+  onStartRelink: () => Promise<void>
 }
 
 const PORT = () => window.api?.serverPort ?? 3847
 
-export function SettingsPage({ onBack }: Props) {
+export function SettingsPage({ onBack, onStartRelink }: Props) {
   const { toneOptions, activeTones, toggleTone, monthlyBudgetUsd, setBudget } = useSettingsStore()
   const [apiKey, setApiKey] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [keySaved, setKeySaved] = useState(false)
   const [usage, setUsage] = useState<{ inputTokens: number; outputTokens: number } | null>(null)
   const [sheetsUrl, setSheetsUrl] = useState('')
-  const [sheetsPath, setSheetsPath] = useState('')
   const [sheetsTab, setSheetsTab] = useState('')
   const [lastSync, setLastSync] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [resetting, setResetting] = useState(false)
+  const [teamMembers, setTeamMembers] = useState<{ name: string; phone: string }[]>([])
+  const [newMemberName, setNewMemberName] = useState('')
+  const [newMemberPhone, setNewMemberPhone] = useState('')
+  const [googleClientId, setGoogleClientId] = useState('')
+  const [googleClientSecret, setGoogleClientSecret] = useState('')
+  const [googleConnected, setGoogleConnected] = useState(false)
+  const [googleLastSync, setGoogleLastSync] = useState<string | null>(null)
+  const [googleSyncing, setGoogleSyncing] = useState(false)
+  const [googleConnecting, setGoogleConnecting] = useState(false)
 
   useEffect(() => {
     window.api.getApiKey().then((k: string | null) => { if (k) setApiKey(k) })
     fetch(`http://127.0.0.1:${PORT()}/ai/usage`).then(r => r.json()).then(setUsage)
     fetch(`http://127.0.0.1:${PORT()}/settings`).then(r => r.json()).then((s: Record<string, string>) => {
       if (s.sheets_url) setSheetsUrl(s.sheets_url)
-      if (s.sheets_service_account_path) setSheetsPath(s.sheets_service_account_path)
       if (s.sheets_tab) setSheetsTab(s.sheets_tab)
+      if (s.google_client_id) setGoogleClientId(s.google_client_id)
+      if (s.google_client_secret) setGoogleClientSecret(s.google_client_secret)
+      try { if (s.team_members) setTeamMembers(JSON.parse(s.team_members)) } catch {}
     })
     fetch(`http://127.0.0.1:${PORT()}/sheets/status`).then(r => r.json()).then((s: any) => setLastSync(s.lastSync))
+    fetch(`http://127.0.0.1:${PORT()}/google-contacts/status`).then(r => r.json()).then((s: any) => {
+      setGoogleConnected(s.connected)
+      setGoogleLastSync(s.lastSync)
+    })
+
+    // Listen for OAuth completion (browser redirects back → Express → IPC)
+    const off = window.api.onGoogleAuthComplete(() => {
+      setGoogleConnected(true)
+      setGoogleConnecting(false)
+    })
+    return off
   }, [])
 
   const saveApiKey = async () => {
@@ -41,7 +63,6 @@ export function SettingsPage({ onBack }: Props) {
   const saveSheets = async () => {
     await Promise.all([
       fetch(`http://127.0.0.1:${PORT()}/settings/sheets_url`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: sheetsUrl }) }),
-      fetch(`http://127.0.0.1:${PORT()}/settings/sheets_service_account_path`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: sheetsPath }) }),
       fetch(`http://127.0.0.1:${PORT()}/settings/sheets_tab`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: sheetsTab }) })
     ])
   }
@@ -135,11 +156,24 @@ export function SettingsPage({ onBack }: Props) {
 
         {/* Google Sheets */}
         <section className="mb-8">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">Google Sheets (Atlas)</h2>
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">Google Sheets (Atlas)</h2>
+          <p className="text-xs text-gray-400 mb-3">
+            El spreadsheet debe estar compartido como <strong>"Cualquier persona con el enlace puede ver"</strong>.
+            No se requiere cuenta de servicio.
+          </p>
           <div className="flex flex-col gap-3">
-            <input value={sheetsUrl} onChange={e => setSheetsUrl(e.target.value)} placeholder="URL del spreadsheet" className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            <input value={sheetsPath} onChange={e => setSheetsPath(e.target.value)} placeholder="Ruta al archivo JSON de Service Account" className="border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono" />
-            <input value={sheetsTab} onChange={e => setSheetsTab(e.target.value)} placeholder="Nombre de la pestaña (ej: Brokers)" className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <input
+              value={sheetsUrl}
+              onChange={e => setSheetsUrl(e.target.value)}
+              placeholder="URL del spreadsheet"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            />
+            <input
+              value={sheetsTab}
+              onChange={e => setSheetsTab(e.target.value)}
+              placeholder="Nombre de la pestaña (ej: Brokers)"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            />
             <div className="flex items-center gap-3">
               <button onClick={runSync} disabled={syncing} className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50">
                 {syncing ? 'Sincronizando…' : 'Sincronizar ahora'}
@@ -153,6 +187,171 @@ export function SettingsPage({ onBack }: Props) {
           </div>
         </section>
 
+        {/* Team members for escalation */}
+        <section className="mb-8 border-t border-gray-100 pt-8">
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">Equipo (escalaciones)</h2>
+          <p className="text-xs text-gray-400 mb-3">
+            Personas a las que puedes escalar conversaciones. Se les envía un resumen por WhatsApp.
+          </p>
+
+          {/* Existing members */}
+          <div className="flex flex-col gap-1.5 mb-3">
+            {teamMembers.map((m, i) => (
+              <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
+                <span className="text-sm font-medium text-gray-800 flex-1">{m.name}</span>
+                <span className="text-xs text-gray-400">+{m.phone}</span>
+                <button
+                  onClick={() => {
+                    const next = teamMembers.filter((_, j) => j !== i)
+                    setTeamMembers(next)
+                    fetch(`http://127.0.0.1:${PORT()}/settings/team_members`, {
+                      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ value: JSON.stringify(next) })
+                    })
+                  }}
+                  className="text-gray-400 hover:text-red-500 text-lg leading-none ml-1"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Add new member */}
+          <div className="flex gap-2">
+            <input
+              value={newMemberName}
+              onChange={e => setNewMemberName(e.target.value)}
+              placeholder="Nombre"
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-gray-300"
+            />
+            <input
+              value={newMemberPhone}
+              onChange={e => setNewMemberPhone(e.target.value.replace(/\D/g, ''))}
+              placeholder="521XXXXXXXXXX"
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-gray-300"
+            />
+            <button
+              onClick={() => {
+                if (!newMemberName.trim() || !newMemberPhone.trim()) return
+                const next = [...teamMembers, { name: newMemberName.trim(), phone: newMemberPhone.trim() }]
+                setTeamMembers(next)
+                setNewMemberName('')
+                setNewMemberPhone('')
+                fetch(`http://127.0.0.1:${PORT()}/settings/team_members`, {
+                  method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ value: JSON.stringify(next) })
+                })
+              }}
+              disabled={!newMemberName.trim() || !newMemberPhone.trim()}
+              className="px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg disabled:opacity-40 hover:bg-gray-700"
+            >
+              + Agregar
+            </button>
+          </div>
+        </section>
+
+        {/* Google Contacts */}
+        <section className="mb-8 border-t border-gray-100 pt-8">
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">Google Contacts</h2>
+          <p className="text-xs text-gray-400 mb-3">
+            Sincroniza nombres de tus contactos de Google con los números de WhatsApp.
+            Necesitás un <strong>OAuth 2.0 Client ID</strong> de tipo <em>Desktop app</em> en{' '}
+            <span className="text-gray-600">Google Cloud Console → APIs &amp; Services → Credentials</span>.
+            Activá la <strong>People API</strong> en el proyecto.
+          </p>
+
+          <div className="flex flex-col gap-2 mb-3">
+            <input
+              value={googleClientId}
+              onChange={e => setGoogleClientId(e.target.value)}
+              placeholder="Client ID  (…apps.googleusercontent.com)"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
+            />
+            <input
+              type="password"
+              value={googleClientSecret}
+              onChange={e => setGoogleClientSecret(e.target.value)}
+              placeholder="Client Secret"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
+            />
+            <button
+              onClick={async () => {
+                await Promise.all([
+                  fetch(`http://127.0.0.1:${PORT()}/settings/google_client_id`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: googleClientId })
+                  }),
+                  fetch(`http://127.0.0.1:${PORT()}/settings/google_client_secret`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ value: googleClientSecret })
+                  })
+                ])
+              }}
+              disabled={!googleClientId || !googleClientSecret}
+              className="self-start px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 disabled:opacity-40"
+            >
+              Guardar credenciales
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {!googleConnected ? (
+              <button
+                onClick={async () => {
+                  setGoogleConnecting(true)
+                  try { await window.api.openGoogleAuth() } catch (e: any) {
+                    alert(e.message)
+                    setGoogleConnecting(false)
+                  }
+                }}
+                disabled={googleConnecting || !googleClientId || !googleClientSecret}
+                className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50"
+              >
+                {googleConnecting ? 'Esperando autorización…' : 'Conectar Google Contacts'}
+              </button>
+            ) : (
+              <>
+                <span className="text-sm text-green-600 font-medium">✓ Conectado</span>
+                <button
+                  onClick={async () => {
+                    setGoogleSyncing(true)
+                    const r = await fetch(`http://127.0.0.1:${PORT()}/google-contacts/sync`, { method: 'POST' })
+                    const data = await r.json()
+                    setGoogleSyncing(false)
+                    if (data.ok) {
+                      setGoogleLastSync(new Date().toISOString())
+                      alert(`Sincronización completa: ${data.updated} contactos actualizados de ${data.total} (${data.googleContacts} en Google Contacts)`)
+                    } else {
+                      alert(`Error: ${data.error}`)
+                    }
+                  }}
+                  disabled={googleSyncing}
+                  className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50"
+                >
+                  {googleSyncing ? 'Sincronizando…' : 'Sincronizar ahora'}
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!confirm('¿Desconectar Google Contacts?')) return
+                    await fetch(`http://127.0.0.1:${PORT()}/google-contacts/disconnect`, { method: 'DELETE' })
+                    setGoogleConnected(false)
+                    setGoogleLastSync(null)
+                  }}
+                  className="px-3 py-2 text-sm text-red-600 hover:text-red-800"
+                >
+                  Desconectar
+                </button>
+              </>
+            )}
+            {googleLastSync && (
+              <span className="text-xs text-gray-400">
+                Último sync: {new Date(googleLastSync).toLocaleString('es-MX')}
+              </span>
+            )}
+          </div>
+        </section>
+
         {/* WhatsApp re-link */}
         <section className="mb-8 border-t border-gray-100 pt-8">
           <h2 className="text-sm font-semibold text-gray-900 mb-1">Vincular WhatsApp</h2>
@@ -163,9 +362,16 @@ export function SettingsPage({ onBack }: Props) {
             onClick={async () => {
               if (!confirm('¿Desvincular WhatsApp y mostrar código QR? Se importará todo tu historial de conversaciones al volver a escanear.')) return
               setResetting(true)
-              await window.api.resetWAAuth()
-              // App will show QR screen automatically
-              onBack()
+              // Safety timeout — reset button if the IPC takes too long or hangs
+              const safetyTimer = setTimeout(() => setResetting(false), 10_000)
+              try {
+                await onStartRelink()
+              } catch (err) {
+                console.error('resetWAAuth failed:', err)
+              } finally {
+                clearTimeout(safetyTimer)
+                setResetting(false)
+              }
             }}
             disabled={resetting}
             className="px-4 py-2 bg-red-50 text-red-700 border border-red-200 text-sm rounded-lg hover:bg-red-100 disabled:opacity-50"
@@ -173,6 +379,7 @@ export function SettingsPage({ onBack }: Props) {
             {resetting ? 'Desvinculando…' : '🔄 Volver a vincular'}
           </button>
         </section>
+
 
       </div>
     </div>

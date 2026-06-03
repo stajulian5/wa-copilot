@@ -11,10 +11,14 @@ import { aiRouter } from './routes/ai'
 import { sheetsRouter } from './routes/sheets'
 import { settingsRouter } from './routes/settings'
 import { remindersRouter } from './routes/reminders'
+import { googleContactsRouter } from './routes/googleContacts'
+
+import { EventEmitter } from 'events'
+export const serverEvents = new EventEmitter()
 
 export async function startServer(db: BetterSQLite3Database<typeof schema>, userDataPath: string): Promise<number> {
   const app = express()
-  app.use(express.json())
+  app.use(express.json({ limit: '10mb' }))
   app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS')
@@ -47,15 +51,25 @@ export async function startServer(db: BetterSQLite3Database<typeof schema>, user
   app.use('/sheets', sheetsRouter)
   app.use('/settings', settingsRouter)
   app.use('/reminders', remindersRouter)
+  app.use('/', googleContactsRouter)
 
   const server = createServer(app)
 
+  // Use fixed port 3847 so the Chrome extension can always find the server.
+  // Falls back to a random port if 3847 is already in use.
   return new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', () => {
-      const port = (server.address() as any).port as number
-      // Expose port to renderer via IPC
-      ipcMain.handle('server:port', () => port)
-      resolve(port)
-    })
+    const attemptListen = (port: number) => {
+      server.once('error', (err: any) => {
+        if (err.code === 'EADDRINUSE' && port === 3847) {
+          attemptListen(0)  // retry on random port
+        }
+      })
+      server.listen(port, '127.0.0.1', () => {
+        const actualPort = (server.address() as any).port as number
+        ipcMain.handle('server:port', () => actualPort)
+        resolve(actualPort)
+      })
+    }
+    attemptListen(3847)
   })
 }

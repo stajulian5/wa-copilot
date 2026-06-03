@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Mica CRM — Sync Contacts",
+  "version": "1.0",
+  "description": "Sincroniza nombres de WhatsApp Web con Mica CRM",
+  "permissions": ["tabs", "scripting"],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "http://127.0.0.1/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Mica CRM Sync",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

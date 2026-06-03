@@ -1,20 +1,31 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 
 interface Props {
   waStatus: 'disconnected' | 'connecting' | 'connected'
+  initialQr: string | null
+  onQRReceived: (qr: string) => void
 }
 
-export function OnboardingPage({ waStatus }: Props) {
-  const [qr, setQr] = useState<string | null>(null)
+export function OnboardingPage({ waStatus, initialQr, onQRReceived }: Props) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [showExpired, setShowExpired] = useState(false)
 
+  // If a QR was already captured before this component mounted, render it immediately
   useEffect(() => {
-    const off = window.api.onQR((raw: string) => {
-      setQr(raw)
+    if (initialQr) {
+      QRCode.toDataURL(initialQr, { width: 280, margin: 2 }).then(url => {
+        setQrDataUrl(url)
+        setShowExpired(false)
+      })
+    }
+  }, [initialQr])
+
+  useEffect(() => {
+    const off = window.api.onQR(({ qr }) => {
+      onQRReceived(qr)
       setShowExpired(false)
-      QRCode.toDataURL(raw, { width: 280, margin: 2 }).then(setQrDataUrl)
+      QRCode.toDataURL(qr, { width: 280, margin: 2 }).then(setQrDataUrl)
       // QR codes expire after 60s
       setTimeout(() => setShowExpired(true), 60_000)
     })

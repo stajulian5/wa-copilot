@@ -2,21 +2,29 @@ import { useEffect, useState } from 'react'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { KanbanPage } from './pages/KanbanPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { AddAccountModal } from './components/AddAccountModal'
 import { useContactsStore } from './stores/contactsStore'
 import { useRemindersStore } from './stores/remindersStore'
 import { useWhatsApp } from './hooks/useWhatsApp'
 import { useSnooze } from './hooks/useSnooze'
+import type { Account } from '../server/db/schema'
 
-type Page = 'kanban' | 'settings'
+type Page = 'kanban' | 'settings' | 'linking'
 
 export default function App() {
   const [waStatus, setWaStatus] = useState<'disconnected' | 'connecting' | 'connected'>('connecting')
-  const [pendingQR, setPendingQR] = useState(false)  // true when WA sends a QR code
   const [page, setPage] = useState<Page>('kanban')
-  const { setContacts } = useContactsStore()
+  // For initial link (account 1, no JID yet): full-screen QR
+  const [onboardingQR, setOnboardingQR] = useState<string | null>(null)
+  // For adding a second account: modal overlay QR
+  const [addAccountQR, setAddAccountQR] = useState<{ qr: string; accountId: number } | null>(null)
+
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null)
+
+  const { setContacts, setActiveAccountId } = useContactsStore()
   const { setReminders } = useRemindersStore()
 
-  // Bootstrap: get initial WA status, contacts, and reminders
   useEffect(() => {
     const port = getPort()
     const fetchContacts = () =>
@@ -25,28 +33,74 @@ export default function App() {
         .then(setContacts)
         .catch(console.error)
 
+    // Initial data fetch
     window.api.getWAStatus().then((s: any) => setWaStatus(s))
-
-    // Listen for QR code events — show onboarding whenever WA sends a QR
-    const offQR = window.api.onQR(() => setPendingQR(true))
     fetchContacts()
     fetch(`http://127.0.0.1:${port}/reminders`)
       .then((r) => r.json())
       .then(setReminders)
       .catch(console.error)
 
-    // Re-fetch contacts after history sync batches finish
-    const offHistory = window.api.onHistorySynced(fetchContacts)
-    return () => { offHistory(); offQR() }
+    // Load accounts + active account id
+    window.api.getAccounts().then(setAccounts).catch(console.error)
+    window.api.getActiveAccountId().then((id) => setActiveAccountId(id)).catch(console.error)
+
+    // QR events — route based on whether this is initial linking or add-account
+    const offQR = window.api.onQR(({ qr, accountId }) => {
+      // Find if this account already has a JID (i.e. is a known account that just needs re-link)
+      const acct = accounts.find(a => a.id === accountId)
+      const isNewAccount = !acct?.jid  // placeholder account (no JID yet) = add-account flow
+      const isActiveAccount = accountId === useContactsStore.getState().activeAccountId
+
+      if (isNewAccount && acct && acct.id !== 1) {
+        // Second+ account being added: show modal overlay
+        setAddAccountQR({ qr, accountId })
+      } else {
+        // Account 1 initial link or re-link: full-screen onboarding
+        setOnboardingQR(qr)
+        setPage(p => p === 'kanban' || p === 'settings' ? p : 'linking')
+        if (isActiveAccount) {
+          setPage('linking')
+        }
+      }
+    })
+
+    // Account list updates (add/remove/JID assigned)
+    const offAccounts = window.api.onAccounts((accts) => {
+      setAccounts(accts)
+      // If the add-account QR modal is open and the new account now has a JID, close it
+      setAddAccountQR(prev => {
+        if (!prev) return null
+        const account = accts.find(a => a.id === prev.accountId)
+        return account?.jid ? null : prev  // close modal once JID is assigned
+      })
+    })
+
+    // Active account switched from main process
+    const offActiveAccount = window.api.onActiveAccount((id) => {
+      setActiveAccountId(id)
+    })
+
+    const offHistory = window.api.onHistorySynced(() => {
+      fetchContacts()
+      setLastSyncAt(new Date())
+    })
+
+    return () => { offHistory(); offQR(); offAccounts(); offActiveAccount() }
   }, [])
 
-  useWhatsApp((s) => {
-    setWaStatus(s)
-    if (s === 'connected') setPendingQR(false)  // clear QR once connected
-  })
+  useWhatsApp(
+    (s) => {
+      setWaStatus(s)
+      if (s === 'connected') {
+        setOnboardingQR(null)
+        setPage(p => p === 'linking' ? 'kanban' : p)
+      }
+    },
+    () => setLastSyncAt(new Date())   // called on every incoming message
+  )
   useSnooze()
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.metaKey && e.key === ',') {
@@ -61,19 +115,72 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [page])
 
-  // Show onboarding if no contacts loaded OR if WA is asking us to scan a QR
   const contacts = useContactsStore((s) => s.contacts)
-  const showOnboarding = pendingQR || (waStatus !== 'connected' && contacts.length === 0)
+  const activeAccountId = useContactsStore((s) => s.activeAccountId)
 
-  if (showOnboarding) {
-    return <OnboardingPage waStatus={waStatus} />
+  // Show full-screen QR when: explicitly linking, or first-time (no contacts + not connected)
+  if (page === 'linking' || (waStatus !== 'connected' && contacts.length === 0)) {
+    return (
+      <OnboardingPage
+        waStatus={waStatus}
+        initialQr={onboardingQR}
+        onQRReceived={setOnboardingQR}
+      />
+    )
   }
 
   if (page === 'settings') {
-    return <SettingsPage onBack={() => setPage('kanban')} />
+    return (
+      <SettingsPage
+        onBack={() => setPage('kanban')}
+        onStartRelink={async () => {
+          try {
+            // Race the IPC call against a 5 s timeout so navigation always fires
+            // even if the main-process handler hangs (e.g. socket in bad state).
+            await Promise.race([
+              window.api.resetWAAuth(),
+              new Promise<void>(resolve => setTimeout(resolve, 5_000))
+            ])
+          } finally {
+            setOnboardingQR(null)
+            setPage('linking')
+          }
+        }}
+      />
+    )
   }
 
-  return <KanbanPage waStatus={waStatus} onOpenSettings={() => setPage('settings')} />
+  return (
+    <>
+      {/* Modal overlay for adding a second WA number */}
+      {addAccountQR && (
+        <AddAccountModal
+          qr={addAccountQR.qr}
+          accountId={addAccountQR.accountId}
+          onClose={async () => {
+            await window.api.removeAccount(addAccountQR.accountId)
+            setAddAccountQR(null)
+          }}
+        />
+      )}
+
+      <KanbanPage
+        waStatus={waStatus}
+        accounts={accounts}
+        activeAccountId={activeAccountId}
+        lastSyncAt={lastSyncAt}
+        onOpenSettings={() => setPage('settings')}
+        onSwitchAccount={async (id) => {
+          await window.api.switchAccount(id)
+          setActiveAccountId(id)
+        }}
+        onAddAccount={async () => {
+          await window.api.addAccount()
+          // QR will arrive via onQR event → sets addAccountQR
+        }}
+      />
+    </>
+  )
 }
 
 function getPort(): number {

@@ -1,16 +1,25 @@
-import { app, BrowserWindow, ipcMain, Notification, nativeTheme, Menu } from 'electron'
+import { app, BrowserWindow, ipcMain, Notification, nativeTheme, Menu, shell } from 'electron'
 
 app.setName('WhatsApp Copilot')
 // Pin userData to a stable path so re-naming the app never loses data
 app.setPath('userData', app.getPath('appData') + '/WhatsApp Copilot')
+
+// ── Single-instance lock ───────────────────────────────────────────────────────
+// Prevents two copies of the app running simultaneously, which would cause WA
+// connection conflicts (error 440: connectionReplaced) and data races.
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  app.quit()
+}
 import { join } from 'path'
 import { existsSync, mkdirSync } from 'fs'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from '../src/server/db/schema'
-import { startServer } from '../src/server/index'
+import { startServer, serverEvents } from '../src/server/index'
 import { startBaileys, getWAStatus } from './baileys'
+import { googleAuthEvents } from '../src/server/googleAuth'
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 
@@ -31,7 +40,12 @@ export const db = drizzle(sqlite, { schema })
 
 const migrationsFolder = join(__dirname, '../../src/server/db/migrations')
 if (existsSync(migrationsFolder)) {
+  // Disable FK enforcement before migrate so Drizzle's internal transaction can
+  // DROP and recreate tables that are referenced by other tables (e.g. contacts → messages).
+  // PRAGMA foreign_keys cannot be changed inside a transaction, so it must be set here.
+  sqlite.pragma('foreign_keys = OFF')
   migrate(db, { migrationsFolder })
+  sqlite.pragma('foreign_keys = ON')
 }
 
 // ─── Window ───────────────────────────────────────────────────────────────────
@@ -44,6 +58,7 @@ function createWindow(): void {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
+    title: 'WhatsApp Copilot',
     titleBarStyle: 'hiddenInset',
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#1a1a1a' : '#ffffff',
     webPreferences: {
@@ -73,6 +88,23 @@ app.whenReady().then(async () => {
 
   // Respond synchronously to preload's port request
   ipcMain.on('server:port-sync', (e) => { e.returnValue = port })
+
+  // Google OAuth: open system browser → Express callback fires → notify renderer
+  ipcMain.handle('google:openAuth', async () => {
+    const r = await fetch(`http://127.0.0.1:${port}/oauth/google/start`)
+    const data = await r.json() as any
+    if (data.error) throw new Error(data.error)
+    shell.openExternal(data.url)
+  })
+
+  googleAuthEvents.on('connected', () => {
+    mainWindow?.webContents.send('google:authComplete')
+  })
+
+  // Chrome extension synced contact names → tell renderer to reload contacts
+  serverEvents.on('contactsUpdated', () => {
+    mainWindow?.webContents.send('wa:historySynced')
+  })
 
   // Set custom menu so macOS menu bar shows "WhatsApp Copilot" instead of "Electron"
   const appMenu = Menu.buildFromTemplate([
@@ -123,3 +155,4 @@ ipcMain.handle('set-badge', (_e, count: number) => {
 })
 
 ipcMain.handle('get-user-data-path', () => userData)
+

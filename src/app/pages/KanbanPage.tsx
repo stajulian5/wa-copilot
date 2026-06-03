@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
-import { DndContext, closestCenter, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import {
+  DndContext, closestCenter,
+  DragEndEvent, DragStartEvent, DragOverlay,
+  PointerSensor, useSensor, useSensors
+} from '@dnd-kit/core'
 import { useContactsStore } from '../stores/contactsStore'
 import { KanbanColumn } from '../components/KanbanColumn'
+import { ContactCardContent } from '../components/ContactCard'
+import { CardContextMenu } from '../components/CardContextMenu'
+import { EscalateModal } from '../components/EscalateModal'
 import { ChatPanel } from '../components/ChatPanel'
 import { DailyBriefing } from '../components/DailyBriefing'
 import { NavBar } from '../components/NavBar'
-import type { Contact } from '../../server/db/schema'
+import type { Contact, Account } from '../../server/db/schema'
 
 const STAGES: { key: Contact['stage']; label: string; emoji: string }[] = [
   { key: 'new', label: 'New', emoji: '🆕' },
@@ -14,16 +21,33 @@ const STAGES: { key: Contact['stage']; label: string; emoji: string }[] = [
   { key: 'all_resolved', label: 'All Resolved', emoji: '✅' }
 ]
 
+const STAGE_KEYS: Contact['stage'][] = ['new', 'open_conversation', 'waiting_for', 'all_resolved']
+
 interface Props {
   waStatus: string
+  accounts: Account[]
+  activeAccountId: number
+  lastSyncAt: Date | null
   onOpenSettings: () => void
+  onSwitchAccount: (id: number) => void
+  onAddAccount: () => void
 }
 
-export function KanbanPage({ waStatus, onOpenSettings }: Props) {
-  const { selectedContactId, setSelectedContactId, updateContact, getByStage, contacts } = useContactsStore()
+export function KanbanPage({ waStatus, accounts, activeAccountId, lastSyncAt, onOpenSettings, onSwitchAccount, onAddAccount }: Props) {
+  const {
+    selectedContactId, setSelectedContactId,
+    updateContact, getByStage, contacts,
+    reorderContacts, moveToStage
+  } = useContactsStore()
+
   const [showBriefing, setShowBriefing] = useState(false)
   const [showSyncBanner, setShowSyncBanner] = useState(() => !localStorage.getItem('sync_banner_dismissed'))
+  const [activeContact, setActiveContact] = useState<Contact | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; contactId: number } | null>(null)
+  const [escalateContactId, setEscalateContactId] = useState<number | null>(null)
+  const [syncingContactId, setSyncingContactId] = useState<number | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+  const port = window.api?.serverPort ?? 3847
 
   // Show daily briefing once per day
   useEffect(() => {
@@ -54,30 +78,71 @@ export function KanbanPage({ waStatus, onOpenSettings }: Props) {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
+  const handleCardContextMenu = (e: React.MouseEvent, contactId: number) => {
+    setContextMenu({ x: e.clientX, y: e.clientY, contactId })
+  }
+
+  const syncContactAvatar = async (contactId: number) => {
+    setSyncingContactId(contactId)
+    try {
+      // Re-fetch avatar AND force WA to re-push the full address book
+      // (address book contains names for contacts saved in your phone)
+      await Promise.all([
+        window.api.syncAvatar(contactId),
+        window.api.resyncContacts()
+      ])
+    } finally {
+      setSyncingContactId(null)
+    }
+  }
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const contactId = Number(event.active.id)
+    const contact = useContactsStore.getState().contacts.find(c => c.id === contactId)
+    setActiveContact(contact ?? null)
+  }
+
   const handleDragEnd = async (event: DragEndEvent) => {
+    setActiveContact(null)
     const { active, over } = event
     if (!over || active.id === over.id) return
 
     const contactId = Number(active.id)
-    const STAGE_IDS: Contact['stage'][] = ['new', 'open_conversation', 'waiting_for', 'all_resolved']
+    const draggedContact = useContactsStore.getState().contacts.find(c => c.id === contactId)
+    if (!draggedContact) return
 
-    // over.id is either a stage string (dropped on column) or a contact ID (dropped on a card)
-    let newStage: Contact['stage']
-    if (STAGE_IDS.includes(over.id as Contact['stage'])) {
-      newStage = over.id as Contact['stage']
+    if (STAGE_KEYS.includes(over.id as Contact['stage'])) {
+      // Dropped directly on a column (not on a card)
+      const newStage = over.id as Contact['stage']
+      if (newStage === draggedContact.stage) return
+      moveToStage(contactId, newStage)
+      updateContact(contactId, { stage: newStage, stageChangedAt: new Date() })
+      await fetch(`http://127.0.0.1:${port}/contacts/${contactId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage: newStage })
+      })
     } else {
-      // Dropped on another card — use that card's stage
-      const targetContact = useContactsStore.getState().contacts.find(c => c.id === Number(over.id))
+      // Dropped on another card
+      const overId = Number(over.id)
+      const targetContact = useContactsStore.getState().contacts.find(c => c.id === overId)
       if (!targetContact) return
-      newStage = targetContact.stage
-    }
 
-    updateContact(contactId, { stage: newStage, stageChangedAt: new Date() })
-    await fetch(`http://127.0.0.1:${getPort()}/contacts/${contactId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stage: newStage })
-    })
+      if (targetContact.stage === draggedContact.stage) {
+        // Same column: reorder within column (no network call needed)
+        reorderContacts(draggedContact.stage, contactId, overId)
+      } else {
+        // Different column: change stage and position
+        const newStage = targetContact.stage
+        moveToStage(contactId, newStage, overId)
+        updateContact(contactId, { stage: newStage, stageChangedAt: new Date() })
+        await fetch(`http://127.0.0.1:${port}/contacts/${contactId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stage: newStage })
+        })
+      }
+    }
   }
 
   return (
@@ -86,6 +151,11 @@ export function KanbanPage({ waStatus, onOpenSettings }: Props) {
         waStatus={waStatus as any}
         searchRef={searchRef}
         onOpenSettings={onOpenSettings}
+        accounts={accounts}
+        activeAccountId={activeAccountId}
+        onSwitchAccount={onSwitchAccount}
+        onAddAccount={onAddAccount}
+        lastSyncAt={lastSyncAt}
       />
 
       {showBriefing && <DailyBriefing onClose={() => setShowBriefing(false)} />}
@@ -112,7 +182,12 @@ export function KanbanPage({ waStatus, onOpenSettings }: Props) {
         </div>
       )}
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
         <div className="flex flex-1 gap-3 p-3 overflow-hidden">
           {STAGES.map((stage, idx) => (
             <KanbanColumn
@@ -122,9 +197,22 @@ export function KanbanPage({ waStatus, onOpenSettings }: Props) {
               contacts={getByStage(stage.key)}
               columnIndex={idx + 1}
               onSelectContact={setSelectedContactId}
+              onContactContextMenu={handleCardContextMenu}
             />
           ))}
         </div>
+
+        {/* Floating card shown while dragging */}
+        <DragOverlay dropAnimation={null}>
+          {activeContact ? (
+            <div
+              className="bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden opacity-95"
+              style={{ width: 300, transform: 'rotate(1deg) scale(1.02)' }}
+            >
+              <ContactCardContent contact={activeContact} port={port} />
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       {selectedContactId !== null && (
@@ -133,10 +221,36 @@ export function KanbanPage({ waStatus, onOpenSettings }: Props) {
           onClose={() => setSelectedContactId(null)}
         />
       )}
+
+      {/* Right-click context menu */}
+      {contextMenu && (
+        <CardContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              icon: '🔄',
+              label: 'Sincronizar contacto',
+              loading: syncingContactId === contextMenu.contactId,
+              onClick: () => syncContactAvatar(contextMenu.contactId)
+            },
+            {
+              icon: '⚡',
+              label: 'Escalar conversación',
+              onClick: () => setEscalateContactId(contextMenu.contactId)
+            }
+          ]}
+        />
+      )}
+
+      {/* Escalation modal */}
+      {escalateContactId !== null && (
+        <EscalateModal
+          contactId={escalateContactId}
+          onClose={() => setEscalateContactId(null)}
+        />
+      )}
     </div>
   )
-}
-
-function getPort(): number {
-  return window.api?.serverPort ?? 3847
 }

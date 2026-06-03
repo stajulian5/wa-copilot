@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useRemindersStore } from '../stores/remindersStore'
@@ -7,6 +7,7 @@ import type { Contact } from '../../server/db/schema'
 interface Props {
   contact: Contact
   onClick: () => void
+  onContextMenu?: (e: React.MouseEvent, contactId: number) => void
 }
 
 // ── Avatar ────────────────────────────────────────────────────────────────────
@@ -53,6 +54,12 @@ function ContactAvatar({ contact, size, port }: { contact: Contact; size: number
   const [imgFailed, setImgFailed] = useState(false)
   const displayName = contact.name ?? contact.phone ?? ''
 
+  // When new avatars are downloaded mid-session, retry loading
+  useEffect(() => {
+    const off = window.api.onHistorySynced(() => setImgFailed(false))
+    return off
+  }, [])
+
   if (!imgFailed) {
     return (
       <img
@@ -89,55 +96,42 @@ function formatWATime(date: Date | null): string {
 }
 
 function formatFallbackName(whatsappId: string, phone: string | null): string {
-  if (whatsappId.endsWith('@lid')) return 'Contacto WA'
-  if (!phone) return whatsappId
-  if (phone.startsWith('521') && phone.length === 13) {
-    return `+52 1 ${phone.slice(3, 6)} ${phone.slice(6, 9)} ${phone.slice(9)}`
+  if (phone) {
+    // Normalize old MX mobile format: 521XXXXXXXXXX → 52XXXXXXXXXX
+    let p = phone
+    if (p.startsWith('521') && p.length === 13) p = '52' + p.slice(3)
+    if (p.startsWith('52') && p.length === 12)
+      return `+52 ${p.slice(2, 5)} ${p.slice(5, 8)} ${p.slice(8)}`
+    return `+${p}`
   }
-  if (phone.startsWith('52') && phone.length === 12) {
-    return `+52 ${phone.slice(2, 4)} ${phone.slice(4, 8)} ${phone.slice(8)}`
-  }
-  return `+${phone}`
+  // No phone at all → anonymous privacy-mode contact
+  if (whatsappId.endsWith('@lid')) return 'Usuario privado'
+  return whatsappId
 }
 
-// ── Card ──────────────────────────────────────────────────────────────────────
+// ── Card content (visual-only, no sortable hooks) ─────────────────────────────
+// Exported so KanbanPage can use it inside DragOverlay without sortable context.
 
-export function ContactCard({ contact, onClick }: Props) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: String(contact.id)
-  })
+export function ContactCardContent({ contact, port }: { contact: Contact; port: number }) {
   const hasSnooze = useRemindersStore(s =>
     s.reminders.some(r => r.contactId === contact.id && !r.isDone)
   )
-
-  const port = window.api?.serverPort ?? 3847
-  const displayName = contact.name ?? formatFallbackName(contact.whatsappId, contact.phone)
+  // Priority: WA name → Atlas sheet name → formatted phone → "Usuario privado"
+  const displayName = contact.name ?? contact.sheetName ?? formatFallbackName(contact.whatsappId, contact.phone)
   const lastAt = contact.lastMessageAt ? new Date(contact.lastMessageAt) : null
   const unreadCount = contact.unreadCount ?? 0
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1
-  }
-
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      onClick={onClick}
-      className="flex items-center gap-3 px-3 py-2.5 bg-white border-b border-gray-100 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors select-none last:border-b-0"
-    >
-      {/* Avatar */}
+    <div className="flex items-center gap-3 px-3 py-2.5">
       <ContactAvatar contact={contact} size={46} port={port} />
 
-      {/* Text content */}
       <div className="flex-1 min-w-0">
         {/* Row 1: Name + time */}
         <div className="flex items-baseline justify-between gap-1">
-          <span className="font-semibold text-gray-900 text-[14px] truncate leading-snug">
+          <span className="font-semibold text-gray-900 text-[14px] truncate leading-snug flex items-center gap-1">
+            {contact.isGroup && (
+              <span className="text-[10px] text-gray-400 font-normal shrink-0">👥</span>
+            )}
             {displayName}
           </span>
           <span className={`text-[11px] shrink-0 tabular-nums ${unreadCount > 0 ? 'text-[#25D366] font-medium' : 'text-gray-400'}`}>
@@ -148,6 +142,9 @@ export function ContactCard({ contact, onClick }: Props) {
         {/* Row 2: Last message + badges */}
         <div className="flex items-center justify-between gap-2 mt-0.5">
           <p className="text-[13px] text-gray-500 truncate flex-1 leading-tight">
+            {contact.isGroup && contact.lastMessageSenderName && (
+              <span className="text-gray-600 font-medium">{contact.lastMessageSenderName}: </span>
+            )}
             {contact.lastMessage ?? <span className="text-gray-300">Sin mensajes</span>}
           </p>
           <div className="flex items-center gap-1 shrink-0">
@@ -165,6 +162,36 @@ export function ContactCard({ contact, onClick }: Props) {
           <p className="text-[11px] text-blue-500 truncate mt-0.5">🏠 {contact.property}</p>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Sortable card (used in columns) ──────────────────────────────────────────
+
+export function ContactCard({ contact, onClick, onContextMenu }: Props) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: String(contact.id)
+  })
+  const port = window.api?.serverPort ?? 3847
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    // Invisible placeholder while dragging — DragOverlay renders the visual
+    opacity: isDragging ? 0 : 1
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={onClick}
+      onContextMenu={onContextMenu ? (e) => { e.preventDefault(); onContextMenu(e, contact.id) } : undefined}
+      className="bg-white border-b border-gray-100 cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors select-none last:border-b-0"
+    >
+      <ContactCardContent contact={contact} port={port} />
     </div>
   )
 }

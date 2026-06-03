@@ -149,6 +149,86 @@ aiRouter.post('/suggest', async (req, res) => {
   }
 })
 
+// POST /ai/summarize
+// Body: { contactId: number }
+// Returns: { summary: string } — a short executive summary for escalation
+aiRouter.post('/summarize', async (req, res) => {
+  const { contactId } = req.body
+  if (!contactId) return res.status(400).json({ error: 'contactId required' })
+
+  const apiKey = await keytar.getPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT)
+  if (!apiKey) return res.status(402).json({ error: 'NO_API_KEY' })
+
+  const [contact] = db(req)
+    .select()
+    .from(schema.contacts)
+    .where(eq(schema.contacts.id, contactId))
+    .all()
+  if (!contact) return res.status(404).json({ error: 'Contact not found' })
+
+  const msgs = db(req)
+    .select()
+    .from(schema.messages)
+    .where(eq(schema.messages.contactId, contactId))
+    .orderBy(desc(schema.messages.timestamp))
+    .limit(30)
+    .all()
+    .reverse()
+
+  const stageLabels: Record<string, string> = {
+    new: 'New',
+    open_conversation: 'Open Conversation',
+    waiting_for: 'Waiting For',
+    all_resolved: 'All Resolved'
+  }
+
+  const conversationText = msgs
+    .map((m) => {
+      const time = format(new Date(m.timestamp), 'HH:mm dd/MM')
+      const who = m.direction === 'out' ? 'KAM' : 'Broker'
+      return `[${time}] ${who}: ${m.body ?? '[media]'}`
+    })
+    .join('\n')
+
+  const contactName = contact.name ?? contact.phone ?? 'Contacto'
+
+  const systemPrompt = `Eres un asistente interno de Mica, PropTech mexicana.
+Genera un resumen ejecutivo BREVE de esta conversación para escalar con otro KAM.
+
+CONTACTO
+Nombre: ${contactName}
+Etapa CRM: ${stageLabels[contact.stage] ?? contact.stage}
+${contact.property ? `Propiedad: ${contact.property}` : ''}
+${contact.kycStatus ? `KYC: ${contact.kycStatus}` : ''}
+${contact.notes ? `Notas: ${contact.notes}` : ''}
+
+CONVERSACIÓN (más antiguo primero)
+${conversationText || '(Sin mensajes)'}
+
+INSTRUCCIONES
+- Máximo 3 oraciones en español mexicano natural
+- Incluye: quién es, qué quiere/necesita, y cuál es el punto de fricción o por qué se escala
+- Sin bullet points — texto corrido
+- No empieces con "El broker" — sé directo
+- Responde SOLO el resumen, sin preámbulo`
+
+  try {
+    const anthropic = new Anthropic({ apiKey })
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 256,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: 'Genera el resumen.' }]
+    })
+
+    const summary = (response.content[0] as any).text as string
+    res.json({ summary, contactName, stage: contact.stage, property: contact.property })
+  } catch (err: any) {
+    console.error('AI summarize error:', err)
+    res.status(500).json({ error: err.message ?? 'AI request failed' })
+  }
+})
+
 // GET /ai/usage
 aiRouter.get('/usage', (req, res) => {
   const month = format(new Date(), 'yyyy-MM')

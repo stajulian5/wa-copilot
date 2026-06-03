@@ -3,10 +3,13 @@ import { contextBridge, ipcRenderer } from 'electron'
 // Inject server port synchronously before any page scripts run
 const serverPort = ipcRenderer.sendSync('server:port-sync') as number
 
+// Many components subscribe to wa:historySynced — raise the limit to avoid warnings
+ipcRenderer.setMaxListeners(300)
+
 // ─── IPC API exposed to the renderer ─────────────────────────────────────────
 
 export const api = {
-  // WhatsApp
+  // WhatsApp — messaging
   getWAStatus: () => ipcRenderer.invoke('wa:getStatus'),
   sendMessage: (jid: string, text: string) => ipcRenderer.invoke('wa:sendMessage', jid, text),
   sendMedia: (jid: string, mediaPath: string, caption?: string) =>
@@ -14,32 +17,62 @@ export const api = {
 
   // Events from main → renderer
   onWAStatus: (cb: (status: string) => void) => {
-    ipcRenderer.on('wa:status', (_e, status) => cb(status))
-    return () => ipcRenderer.removeAllListeners('wa:status')
+    const h = (_e: any, s: string) => cb(s)
+    ipcRenderer.on('wa:status', h)
+    return () => ipcRenderer.removeListener('wa:status', h)
   },
   onNewMessage: (cb: (msg: unknown) => void) => {
-    ipcRenderer.on('wa:newMessage', (_e, msg) => cb(msg))
-    return () => ipcRenderer.removeAllListeners('wa:newMessage')
+    const h = (_e: any, m: unknown) => cb(m)
+    ipcRenderer.on('wa:newMessage', h)
+    return () => ipcRenderer.removeListener('wa:newMessage', h)
   },
   onMessageUpdate: (cb: (update: unknown) => void) => {
-    ipcRenderer.on('wa:messageUpdate', (_e, update) => cb(update))
-    return () => ipcRenderer.removeAllListeners('wa:messageUpdate')
+    const h = (_e: any, u: unknown) => cb(u)
+    ipcRenderer.on('wa:messageUpdate', h)
+    return () => ipcRenderer.removeListener('wa:messageUpdate', h)
   },
-  onQR: (cb: (qr: string) => void) => {
-    ipcRenderer.on('wa:qr', (_e, qr) => cb(qr))
-    return () => ipcRenderer.removeAllListeners('wa:qr')
+  onQR: (cb: (payload: { qr: string; accountId: number }) => void) => {
+    const h = (_e: any, payload: { qr: string; accountId: number }) => cb(payload)
+    ipcRenderer.on('wa:qr', h)
+    return () => ipcRenderer.removeListener('wa:qr', h)
   },
   onContactUpserted: (cb: (contact: unknown) => void) => {
-    ipcRenderer.on('wa:contactUpserted', (_e, contact) => cb(contact))
-    return () => ipcRenderer.removeAllListeners('wa:contactUpserted')
+    const h = (_e: any, c: unknown) => cb(c)
+    ipcRenderer.on('wa:contactUpserted', h)
+    return () => ipcRenderer.removeListener('wa:contactUpserted', h)
   },
   onHistorySynced: (cb: () => void) => {
-    ipcRenderer.on('wa:historySynced', () => cb())
-    return () => ipcRenderer.removeAllListeners('wa:historySynced')
+    const h = () => cb()
+    ipcRenderer.on('wa:historySynced', h)
+    return () => ipcRenderer.removeListener('wa:historySynced', h)
   },
 
-  // WhatsApp re-link (clears auth + shows QR)
+  // WhatsApp — account management
+  getAccounts: () => ipcRenderer.invoke('wa:getAccounts'),
+  getActiveAccountId: () => ipcRenderer.invoke('wa:getActiveAccountId'),
+  switchAccount: (accountId: number) => ipcRenderer.invoke('wa:switchAccount', accountId),
+  addAccount: () => ipcRenderer.invoke('wa:addAccount'),
+  removeAccount: (accountId: number) => ipcRenderer.invoke('wa:removeAccount', accountId),
+  updateAccountLabel: (accountId: number, label: string) =>
+    ipcRenderer.invoke('wa:updateAccountLabel', accountId, label),
+
+  onAccounts: (cb: (accounts: unknown[]) => void) => {
+    const h = (_e: any, accts: unknown[]) => cb(accts)
+    ipcRenderer.on('wa:accounts', h)
+    return () => ipcRenderer.removeListener('wa:accounts', h)
+  },
+  onActiveAccount: (cb: (accountId: number) => void) => {
+    const h = (_e: any, id: number) => cb(id)
+    ipcRenderer.on('wa:activeAccount', h)
+    return () => ipcRenderer.removeListener('wa:activeAccount', h)
+  },
+
+  // WhatsApp re-link (clears auth + shows QR for active account)
   resetWAAuth: () => ipcRenderer.invoke('wa:resetAuth'),
+  // Force re-fetch avatar for a specific contact
+  syncAvatar: (contactId: number) => ipcRenderer.invoke('wa:syncAvatar', contactId),
+  // Force WhatsApp to re-push the contacts address book
+  resyncContacts: () => ipcRenderer.invoke('wa:resyncContacts'),
 
   // Notifications & badge
   notify: (title: string, body: string) => ipcRenderer.invoke('notify', title, body),
@@ -50,6 +83,14 @@ export const api = {
   getApiKey: () => ipcRenderer.invoke('keychain:get'),
   setApiKey: (key: string) => ipcRenderer.invoke('keychain:set', key),
   deleteApiKey: () => ipcRenderer.invoke('keychain:delete'),
+
+  // Google Contacts OAuth
+  openGoogleAuth: () => ipcRenderer.invoke('google:openAuth'),
+  onGoogleAuthComplete: (cb: () => void) => {
+    const h = () => cb()
+    ipcRenderer.on('google:authComplete', h)
+    return () => ipcRenderer.removeListener('google:authComplete', h)
+  },
 
   // Server port (for HTTP API calls from renderer)
   serverPort

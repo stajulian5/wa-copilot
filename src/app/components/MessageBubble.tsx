@@ -29,7 +29,14 @@ export function MessageBubble({ message }: Props) {
   }
 
   return (
-    <div className={`flex ${isOut ? 'justify-end' : 'justify-start'} mb-0.5`}>
+    <div className={`flex flex-col ${isOut ? 'items-end' : 'items-start'} mb-0.5`}>
+      {/* Group sender name above incoming bubble */}
+      {!isOut && message.senderName && (
+        <p className="text-[11px] font-semibold text-emerald-600 mb-0.5 ml-1 px-1">
+          {message.senderName}
+        </p>
+      )}
+      <div className={`flex ${isOut ? 'justify-end' : 'justify-start'} w-full`}>
       <div
         className={`selectable max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
           isOut ? 'bg-wa-light text-gray-900 rounded-br-sm' : 'bg-white text-gray-900 rounded-bl-sm border border-gray-100'
@@ -70,11 +77,13 @@ export function MessageBubble({ message }: Props) {
           <div className="text-xs text-gray-500 italic">📊 {message.body}</div>
         ) : message.type === 'sticker' ? (
           message.mediaUrl ? <img src={message.mediaUrl} alt="" className="w-24 h-24" /> : null
-        ) : (
+        ) : message.body ? (
           <p className="whitespace-pre-wrap break-words">
             {message.body}
             {message.isEdited && <span className="text-gray-400 text-xs ml-1 italic">editado</span>}
           </p>
+        ) : (
+          <p className="italic text-gray-300 text-xs">[Mensaje]</p>
         )}
 
         {/* Timestamp + status */}
@@ -82,6 +91,7 @@ export function MessageBubble({ message }: Props) {
           <span className="text-gray-400 text-[10px]">{time}</span>
           {isOut && <span className="text-gray-400 text-[10px]">{statusIcon(message.status)}</span>}
         </div>
+      </div>
       </div>
     </div>
   )

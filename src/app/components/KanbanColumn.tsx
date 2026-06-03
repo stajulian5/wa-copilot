@@ -9,9 +9,10 @@ interface Props {
   contacts: Contact[]
   columnIndex: number
   onSelectContact: (id: number) => void
+  onContactContextMenu: (e: React.MouseEvent, contactId: number) => void
 }
 
-export function KanbanColumn({ stage, label, contacts, onSelectContact }: Props) {
+export function KanbanColumn({ stage, label, contacts, onSelectContact, onContactContextMenu }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: stage })
   const totalUnread = contacts.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0)
 
@@ -46,6 +47,7 @@ export function KanbanColumn({ stage, label, contacts, onSelectContact }: Props)
               key={contact.id}
               contact={contact}
               onClick={() => onSelectContact(contact.id)}
+              onContextMenu={onContactContextMenu}
             />
           ))}
         </SortableContext>
