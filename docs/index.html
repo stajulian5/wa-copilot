@@ -451,6 +451,45 @@
     .cta-note { margin-top: 20px; font-size: 13px; color: rgba(255,255,255,.4); }
     .cta-note a { color: rgba(255,255,255,.5); }
 
+    /* ─── Access modal (email gate before download) ─────────────────────────── */
+    #access-modal { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.55); align-items: center; justify-content: center; padding: 24px; backdrop-filter: blur(4px); }
+    #access-modal.show { display: flex; }
+    .am-box {
+      background: #fff; border-radius: 24px; padding: 40px 36px;
+      max-width: 420px; width: 100%; text-align: center;
+      box-shadow: 0 32px 80px rgba(0,0,0,.25);
+    }
+    .am-icon { font-size: 44px; margin-bottom: 12px; }
+    .am-box h3 { font-size: 22px; font-weight: 900; letter-spacing: -.02em; color: var(--ink); margin-bottom: 8px; }
+    .am-box p  { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 28px; }
+    .am-form { display: flex; flex-direction: column; gap: 10px; }
+    .am-input {
+      width: 100%; padding: 14px 16px; border: 1.5px solid var(--border);
+      border-radius: 12px; font-size: 15px; outline: none;
+      transition: border-color .15s;
+    }
+    .am-input:focus { border-color: var(--accent); }
+    .am-submit {
+      width: 100%; padding: 14px; background: var(--accent); color: #fff;
+      border: none; border-radius: 12px; font-size: 15px; font-weight: 800;
+      cursor: pointer; transition: background .15s, transform .1s;
+    }
+    .am-submit:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .am-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    .am-skip { margin-top: 8px; font-size: 12px; color: var(--muted); cursor: pointer; background: none; border: none; text-decoration: underline; }
+    .am-skip:hover { color: var(--ink); }
+    .am-success { display: none; }
+    .am-success.show { display: block; }
+    .am-key-box {
+      background: var(--accent-light); border: 1.5px solid #a7f3c4;
+      border-radius: 10px; padding: 12px 16px; font-family: monospace;
+      font-size: 16px; font-weight: 700; color: var(--accent-text);
+      letter-spacing: .08em; margin: 16px 0; cursor: pointer;
+      transition: background .15s;
+    }
+    .am-key-box:hover { background: #dcfce7; }
+    .am-key-note { font-size: 11px; color: var(--muted); }
+
     /* ─── Footer ────────────────────────────────────────────────────────────── */
     footer {
       padding: 28px 48px; border-top: 1px solid var(--border);
@@ -1077,6 +1116,34 @@
   </div>
 </footer>
 
+<!-- Access modal — email gate before download -->
+<div id="access-modal">
+  <div class="am-box">
+    <!-- Step 1: Email form -->
+    <div id="am-form-view">
+      <div class="am-icon">✈️</div>
+      <h3>Get free access</h3>
+      <p>Enter your email to download. We'll send you updates and give you early access when new features launch — no spam, unsubscribe any time.</p>
+      <div class="am-form">
+        <input class="am-input" id="am-email" type="email" placeholder="you@company.com" autocomplete="email" />
+        <button class="am-submit" id="am-submit-btn" onclick="submitAccess()">Get free access &amp; download →</button>
+        <button class="am-skip" onclick="skipAndDownload()">Skip — just download</button>
+      </div>
+      <p id="am-error" style="color:#dc2626;font-size:12px;margin-top:8px;display:none;"></p>
+    </div>
+
+    <!-- Step 2: Success + key display -->
+    <div id="am-success-view" style="display:none;">
+      <div class="am-icon">🎉</div>
+      <h3>Your download is starting!</h3>
+      <p>Save this license key — you'll need it if you reinstall Copilot.</p>
+      <div class="am-key-box" id="am-key-display" onclick="copyKey()" title="Click to copy"></div>
+      <p class="am-key-note">Click to copy · Also sent to your email</p>
+      <button class="am-submit" style="margin-top:20px;" onclick="closeModal()">Done</button>
+    </div>
+  </div>
+</div>
+
 <!-- Mobile warning -->
 <div id="mobile-warning">
   <div class="mw-box">
@@ -1088,46 +1155,118 @@
 </div>
 
 <script>
-  const BASE = 'https://github.com/stajulian5/wa-copilot/releases/latest/download/';
-  const ARM_DMG  = BASE + 'WhatsApp.Copilot-0.2.0-arm64.dmg';
+  // ── Config ────────────────────────────────────────────────────────────────
+  const BASE      = 'https://github.com/stajulian5/wa-copilot/releases/latest/download/';
+  const ARM_DMG   = BASE + 'WhatsApp.Copilot-0.2.0-arm64.dmg';
   const INTEL_DMG = BASE + 'WhatsApp.Copilot-0.2.0.dmg';
+  // Point this to your Vercel deployment once deployed:
+  const API_URL   = 'https://wa-copilot.vercel.app/api/access';
 
-  // Detect Apple Silicon: reported as MacIntel in JS but has touch points
-  function isAppleSilicon() {
-    return /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
-  }
-  function isMac() {
-    return /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
-  }
-  function isMobile() {
-    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  }
+  // ── Device detection ──────────────────────────────────────────────────────
+  const isAppleSilicon = () => /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
+  const isMac          = () => /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
+  const isMobile       = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const dmgUrl         = () => isAppleSilicon() ? ARM_DMG : INTEL_DMG;
 
-  // Update the arch hint text immediately on load
+  // Update arch hint on load
   window.addEventListener('DOMContentLoaded', () => {
     const hint = document.getElementById('arch-hint');
-    if (hint && isMac()) {
-      hint.textContent = isAppleSilicon() ? 'Apple Silicon (M1 / M2 / M3 / M4)' : 'Intel Mac';
-    }
+    if (hint && isMac()) hint.textContent = isAppleSilicon() ? 'Apple Silicon (M1/M2/M3/M4)' : 'Intel Mac';
   });
 
+  // ── Download trigger ──────────────────────────────────────────────────────
+  function triggerDownload() {
+    window.location.href = dmgUrl();
+  }
+
+  // ── Main download button ──────────────────────────────────────────────────
   function startDownload() {
-    if (isMobile()) {
+    if (isMobile() || !isMac()) {
       document.getElementById('mobile-warning').classList.add('show');
       return false;
     }
-    if (!isMac()) {
-      document.getElementById('mobile-warning').classList.add('show');
-      return false;
-    }
-    // Direct .dmg download — no GitHub page
-    const url = isAppleSilicon() ? ARM_DMG : INTEL_DMG;
-    window.location.href = url;
+    // Show email gate
+    document.getElementById('access-modal').classList.add('show');
+    setTimeout(() => document.getElementById('am-email').focus(), 100);
     return false;
   }
 
+  // ── Email form submission ─────────────────────────────────────────────────
+  async function submitAccess() {
+    const email = document.getElementById('am-email').value.trim();
+    const errEl = document.getElementById('am-error');
+    errEl.style.display = 'none';
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errEl.textContent = 'Please enter a valid email address.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('am-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Setting up your access…';
+
+    // Trigger download immediately — don't wait for API
+    triggerDownload();
+
+    try {
+      const res  = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source: 'landing' })
+      });
+      const data = await res.json();
+
+      // Show success with license key
+      document.getElementById('am-form-view').style.display   = 'none';
+      document.getElementById('am-success-view').style.display = 'block';
+      document.getElementById('am-key-display').textContent    = data.key ?? '—';
+    } catch (e) {
+      // API unavailable — download already started, just close the modal
+      closeModal();
+    }
+  }
+
+  function copyKey() {
+    const key = document.getElementById('am-key-display').textContent;
+    navigator.clipboard.writeText(key).then(() => {
+      document.getElementById('am-key-display').textContent = '✓ Copied!';
+      setTimeout(() => { document.getElementById('am-key-display').textContent = key; }, 1500);
+    });
+  }
+
+  function skipAndDownload() {
+    closeModal();
+    triggerDownload();
+  }
+
+  function closeModal() {
+    document.getElementById('access-modal').classList.remove('show');
+    // Reset form for next time
+    document.getElementById('am-form-view').style.display    = 'block';
+    document.getElementById('am-success-view').style.display = 'none';
+    document.getElementById('am-email').value = '';
+    document.getElementById('am-submit-btn').disabled = false;
+    document.getElementById('am-submit-btn').textContent = 'Get free access & download →';
+    document.getElementById('am-error').style.display = 'none';
+  }
+
+  // ── Mobile warning ────────────────────────────────────────────────────────
   document.querySelector('.mw-close').addEventListener('click', () =>
     document.getElementById('mobile-warning').classList.remove('show'));
+
+  // Close modals on backdrop click
+  document.getElementById('access-modal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+
+  // Enter key submits the email form
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('am-email')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitAccess();
+    });
+  });
 </script>
 </body>
 </html>
