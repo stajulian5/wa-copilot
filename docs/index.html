@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WhatsApp Copilot — Nunca pierdas el hilo con un broker.</title>
-  <meta name="description" content="Un CRM de WhatsApp para KAMs. Kanban visual, chat integrado, sugerencias con IA. Todo en tu Mac, sin nubes ni servidores." />
+  <title>WhatsApp Copilot — Atiende a tus clientes sin perder el hilo.</title>
+  <meta name="description" content="El CRM de WhatsApp para KAMs. Kanban visual, chat integrado, respuestas con IA. Sin servidores. Todo en tu Mac." />
   <meta property="og:title" content="WhatsApp Copilot" />
-  <meta property="og:description" content="Un CRM de WhatsApp para KAMs. Kanban, chat integrado, IA." />
+  <meta property="og:description" content="Gestiona 50+ relaciones de cliente por WhatsApp sin perder a nadie." />
   <meta property="og:image" content="https://stajulian5.github.io/wa-copilot/icon.png" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --bg:           #f9f8f5;
       --white:        #ffffff;
@@ -25,23 +24,19 @@
       --shadow-lg:    0 20px 60px rgba(0,0,0,.12), 0 4px 16px rgba(0,0,0,.06);
       --radius:       16px;
     }
-
     html { scroll-behavior: smooth; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--ink);
-      line-height: 1.5;
-      overflow-x: hidden;
+      background: var(--bg); color: var(--ink);
+      line-height: 1.5; overflow-x: hidden;
     }
 
-    /* ── Nav ── */
+    /* ─── Nav ───────────────────────────────────────────────────────────────── */
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 200;
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 48px; height: 58px;
-      background: rgba(249,248,245,0.88);
-      backdrop-filter: blur(20px);
+      background: rgba(249,248,245,0.90); backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
     }
     .nav-logo {
@@ -49,7 +44,7 @@
       font-weight: 800; font-size: 18px; letter-spacing: -.02em; color: var(--ink);
       text-decoration: none;
     }
-    .nav-logo img { width: 28px; height: 28px; border-radius: 7px; display: block; }
+    .nav-logo img { width: 28px; height: 28px; border-radius: 7px; }
     .nav-links { display: flex; gap: 28px; }
     .nav-links a {
       color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 500;
@@ -59,57 +54,56 @@
     .nav-btn {
       background: var(--ink); color: #fff; text-decoration: none;
       padding: 8px 18px; border-radius: 999px; font-size: 14px; font-weight: 700;
-      transition: background .15s, transform .15s; letter-spacing: -.01em;
+      transition: background .15s, transform .15s;
     }
     .nav-btn:hover { background: var(--accent-dark); transform: translateY(-1px); }
 
-    /* ── Hero ── */
+    /* ─── Hero ──────────────────────────────────────────────────────────────── */
     .hero {
       min-height: 100vh;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center;
-      padding: 120px 24px 80px;
+      text-align: center; padding: 130px 24px 80px;
       position: relative; overflow: hidden;
     }
-    .blob {
-      position: absolute; border-radius: 50%;
-      filter: blur(80px); opacity: .45; pointer-events: none; z-index: 0;
-    }
-    .blob-1 { width: 500px; height: 500px; background: #b7f5ce; top: -100px; right: -100px; }
-    .blob-2 { width: 400px; height: 400px; background: #c7f0ff; bottom: 0; left: -80px; }
-    .blob-3 { width: 300px; height: 300px; background: #fff3b7; bottom: 100px; right: 10%; }
-
-    .hero-inner { position: relative; z-index: 1; max-width: 780px; }
+    .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .4; pointer-events: none; z-index: 0; }
+    .blob-1 { width: 600px; height: 600px; background: #b7f5ce; top: -150px; right: -150px; }
+    .blob-2 { width: 500px; height: 500px; background: #c7f0ff; bottom: -50px; left: -100px; }
+    .blob-3 { width: 350px; height: 350px; background: #fff3b7; bottom: 120px; right: 12%; }
+    .hero-inner { position: relative; z-index: 1; max-width: 800px; }
 
     .hero-badge {
       display: inline-flex; align-items: center; gap: 6px;
       background: var(--white); border: 1px solid var(--border);
       color: var(--ink2); font-size: 12px; font-weight: 600;
-      padding: 6px 14px; border-radius: 999px; margin-bottom: 32px;
-      box-shadow: var(--shadow);
+      padding: 6px 14px; border-radius: 999px; margin-bottom: 32px; box-shadow: var(--shadow);
     }
-
     .hero h1 {
-      font-size: clamp(44px, 8vw, 88px);
-      font-weight: 900; letter-spacing: -.04em; line-height: 1.0;
-      color: var(--ink); margin-bottom: 8px;
+      font-size: clamp(44px, 8vw, 88px); font-weight: 900;
+      letter-spacing: -.04em; line-height: 1.0; color: var(--ink); margin-bottom: 8px;
     }
     .hero h1 .accent { color: var(--accent-dark); }
     .hero h1 .wavy {
-      display: inline-block;
-      text-decoration: underline;
-      text-decoration-style: wavy;
-      text-decoration-color: var(--accent);
-      text-underline-offset: 6px;
+      text-decoration: underline; text-decoration-style: wavy;
+      text-decoration-color: var(--accent); text-underline-offset: 6px;
     }
-
     .hero-tagline {
-      font-size: clamp(17px, 2.2vw, 22px);
-      color: var(--ink2); font-weight: 500;
-      margin: 20px auto 40px;
-      max-width: 520px; line-height: 1.6;
+      font-size: clamp(17px, 2.2vw, 22px); color: var(--ink2); font-weight: 500;
+      margin: 20px auto 40px; max-width: 560px; line-height: 1.6;
     }
     .hero-tagline strong { color: var(--ink); font-weight: 700; }
+
+    /* Pill stats row */
+    .hero-stats {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; flex-wrap: wrap; margin-bottom: 40px;
+    }
+    .stat-pill {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 999px; padding: 8px 16px;
+      font-size: 13px; font-weight: 600; color: var(--ink2);
+      box-shadow: var(--shadow); display: flex; align-items: center; gap: 6px;
+    }
+    .stat-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 
     .hero-actions {
       display: flex; align-items: center; justify-content: center;
@@ -118,175 +112,230 @@
     .btn-primary {
       display: inline-flex; align-items: center; gap: 8px;
       background: var(--ink); color: #fff; text-decoration: none;
-      padding: 14px 28px; border-radius: 999px;
+      padding: 15px 30px; border-radius: 999px;
       font-size: 16px; font-weight: 800; letter-spacing: -.02em;
-      box-shadow: 0 4px 20px rgba(0,0,0,.2);
-      transition: background .15s, transform .15s;
+      box-shadow: 0 4px 20px rgba(0,0,0,.2); transition: background .15s, transform .15s;
     }
     .btn-primary:hover { background: var(--accent-dark); transform: translateY(-2px); }
     .btn-secondary {
       display: inline-flex; align-items: center; gap: 6px;
       color: var(--muted); text-decoration: none;
-      padding: 14px 20px; border-radius: 999px; font-size: 15px; font-weight: 500;
+      padding: 15px 20px; border-radius: 999px; font-size: 15px; font-weight: 500;
       border: 1px solid var(--border); background: var(--white);
       transition: border-color .15s, color .15s;
     }
     .btn-secondary:hover { border-color: var(--ink); color: var(--ink); }
     .hero-note { font-size: 12px; color: var(--muted); margin-top: 8px; }
 
-    /* ── Mini Kanban mockup ── */
-    #kanban-demo {
-      position: fixed;
-      top: 80px; right: 48px; z-index: 500;
-      pointer-events: none;
-      animation: float-idle 4s ease-in-out infinite;
-      filter: drop-shadow(0 16px 40px rgba(0,0,0,.14));
-    }
-    @keyframes float-idle {
-      0%, 100% { transform: translateY(0px) rotate(-.5deg); }
-      50%       { transform: translateY(-10px) rotate(.5deg); }
-    }
-    .km-shell {
-      width: 340px;
-      background: #fff;
-      border: 1px solid rgba(0,0,0,.09);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0,0,0,.1);
-    }
-    .km-titlebar {
-      background: #f5f5f5;
-      border-bottom: 1px solid #ebebeb;
-      padding: 8px 12px;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .km-dot { width: 8px; height: 8px; border-radius: 50%; }
-    .km-dot-r { background: #ff5f57; }
-    .km-dot-y { background: #febc2e; }
-    .km-dot-g { background: #28c840; }
-    .km-app-name {
-      flex: 1; text-align: center;
-      font-size: 11px; font-weight: 600; color: #888; letter-spacing: .02em;
-    }
-    .km-body {
-      display: flex; gap: 0;
-      padding: 10px;
-      background: #f9f8f5;
-      gap: 8px;
-    }
-    .km-col { flex: 1; }
-    .km-col-hdr {
-      font-size: 9px; font-weight: 800; letter-spacing: .08em;
-      color: #888; text-transform: uppercase;
-      margin-bottom: 6px; padding: 0 2px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .km-count {
-      background: #e0e0e0; color: #666;
-      font-size: 9px; font-weight: 700;
-      width: 16px; height: 16px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .km-count.green { background: #dcf5e7; color: #16a34a; }
-    .km-card {
-      background: #fff;
-      border: 1px solid #ebebeb;
-      border-radius: 10px;
-      padding: 8px 9px;
-      margin-bottom: 6px;
-      font-size: 10px;
-    }
-    .km-card-name { font-weight: 700; color: #111; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .km-card-preview { color: #888; font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .km-card-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
-    .km-card-time { color: #aaa; font-size: 8px; }
-    .km-badge {
-      background: #25D366; color: #fff;
-      font-size: 8px; font-weight: 800;
-      border-radius: 999px;
-      padding: 1px 5px; min-width: 14px; text-align: center;
-    }
-    .km-badge.gray { background: #e0e0e0; color: #666; }
-
-    /* ── Marquee ── */
+    /* ─── Marquee ───────────────────────────────────────────────────────────── */
     .marquee-wrap {
       background: var(--ink); color: #fff; padding: 14px 0;
       overflow: hidden; white-space: nowrap;
     }
-    .marquee-inner {
-      display: inline-flex; animation: marquee 25s linear infinite;
-    }
+    .marquee-inner { display: inline-flex; animation: marquee 28s linear infinite; }
     .marquee-item {
       display: inline-flex; align-items: center; gap: 10px;
       padding: 0 32px; font-size: 14px; font-weight: 600; letter-spacing: -.01em;
     }
     .marquee-dot { color: var(--accent); font-size: 18px; }
-    @keyframes marquee {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
+    @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-    /* ── Villain section ── */
-    .villain-section {
+    /* ─── Problem section ───────────────────────────────────────────────────── */
+    .problem-section {
       background: var(--white);
       border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
     }
-    .villain-inner {
+    .problem-inner {
       max-width: 1160px; margin: 0 auto; padding: 100px 40px;
       display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start;
     }
-    .villain-text h2 {
+    .problem-text h2 {
       font-size: clamp(30px, 4vw, 48px); font-weight: 900;
       letter-spacing: -.03em; line-height: 1.1; margin: 16px 0 20px;
     }
-    .villain-text p { color: var(--muted); font-size: 16px; line-height: 1.75; }
-    .villain-angles { display: flex; flex-direction: column; gap: 20px; }
-    .angle-card {
+    .problem-text p { color: var(--muted); font-size: 16px; line-height: 1.75; margin-bottom: 14px; }
+    .pain-cards { display: flex; flex-direction: column; gap: 16px; }
+    .pain-card {
       background: var(--bg); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 28px 28px 28px 24px;
+      border-radius: var(--radius); padding: 24px 24px 24px 20px;
       position: relative; overflow: hidden;
     }
-    .angle-card::before {
+    .pain-card::before {
       content: ''; position: absolute; left: 0; top: 0; bottom: 0;
       width: 4px; background: var(--accent); border-radius: 4px 0 0 4px;
     }
-    .angle-num { font-size: 11px; font-weight: 900; letter-spacing: .12em; color: var(--accent); margin-bottom: 8px; }
-    .angle-card h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; letter-spacing: -.01em; }
-    .angle-card p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+    .pain-card h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+    .pain-card p  { font-size: 13px; color: var(--muted); line-height: 1.65; }
 
-    /* ── Features ── */
-    .section {
+    /* ─── Feature showcases ─────────────────────────────────────────────────── */
+    .showcase {
       max-width: 1160px; margin: 0 auto; padding: 100px 40px;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 80px; align-items: center;
     }
-    .section-eyebrow {
+    .showcase.flip { direction: rtl; }
+    .showcase.flip > * { direction: ltr; }
+
+    .showcase-text .eyebrow {
       display: inline-block;
       background: var(--accent-light); color: var(--accent-dark);
       font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
       padding: 5px 12px; border-radius: 999px; margin-bottom: 16px;
     }
-    .section h2 {
-      font-size: clamp(30px, 4vw, 48px); font-weight: 900;
-      letter-spacing: -.03em; line-height: 1.1; margin-bottom: 12px;
+    .showcase-text h2 {
+      font-size: clamp(26px, 3.5vw, 40px); font-weight: 900;
+      letter-spacing: -.03em; line-height: 1.15; margin-bottom: 16px;
     }
-    .section-sub { color: var(--muted); font-size: 17px; max-width: 480px; margin-bottom: 56px; }
-    .feature-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    .showcase-text p { font-size: 15px; color: var(--muted); line-height: 1.75; margin-bottom: 14px; }
+    .showcase-text ul {
+      list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 4px;
     }
-    .feature-card {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 28px 24px;
-      transition: transform .2s, box-shadow .2s;
+    .showcase-text li {
+      font-size: 14px; color: var(--ink2);
+      display: flex; align-items: flex-start; gap: 8px;
     }
-    .feature-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-    .fc-icon {
-      width: 44px; height: 44px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; margin-bottom: 16px; background: var(--accent-light);
-    }
-    .feature-card h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; letter-spacing: -.01em; }
-    .feature-card p  { font-size: 13px; color: var(--muted); line-height: 1.65; }
+    .showcase-text li::before { content: '✓'; color: var(--accent); font-weight: 900; flex-shrink: 0; margin-top: 1px; }
 
-    /* ── Setup ── */
+    .showcase-divider {
+      border-top: 1px solid var(--border);
+      margin: 0;
+    }
+
+    /* ─── Mockup: Kanban ────────────────────────────────────────────────────── */
+    .mock-kanban {
+      background: #fff; border: 1px solid #e0e0e0;
+      border-radius: 20px; overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+    .mock-titlebar {
+      background: #f2f2f2; border-bottom: 1px solid #e8e8e8;
+      padding: 10px 14px; display: flex; align-items: center; gap: 6px;
+    }
+    .tb-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .tb-r { background: #ff5f57; } .tb-y { background: #febc2e; } .tb-g { background: #28c840; }
+    .tb-title { flex: 1; text-align: center; font-size: 12px; font-weight: 600; color: #999; letter-spacing: .02em; }
+    .mock-body { display: flex; gap: 10px; padding: 14px; background: #f6f5f2; }
+    .mk-col { flex: 1; min-width: 0; }
+    .mk-hdr {
+      font-size: 10px; font-weight: 800; letter-spacing: .07em; color: #777;
+      text-transform: uppercase; margin-bottom: 8px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .mk-count {
+      background: #e5e5e5; color: #666; font-size: 9px; font-weight: 800;
+      border-radius: 999px; padding: 1px 6px;
+    }
+    .mk-count.green { background: #dcf5e7; color: #16a34a; }
+    .mk-card {
+      background: #fff; border: 1px solid #ebebeb; border-radius: 10px;
+      padding: 9px 10px; margin-bottom: 7px;
+    }
+    .mk-name { font-size: 11px; font-weight: 700; color: #111; margin-bottom: 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-preview { font-size: 9.5px; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mk-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
+    .mk-time { font-size: 8.5px; color: #bbb; }
+    .mk-badge {
+      background: #25D366; color: #fff; font-size: 8px; font-weight: 900;
+      border-radius: 999px; padding: 1px 6px; min-width: 16px; text-align: center;
+    }
+    .mk-badge.gray { background: #eee; color: #aaa; }
+
+    /* ─── Mockup: Chat with AI ──────────────────────────────────────────────── */
+    .mock-chat {
+      background: #fff; border: 1px solid #e0e0e0;
+      border-radius: 20px; overflow: hidden; box-shadow: var(--shadow-lg);
+    }
+    .mc-header {
+      background: #f2f2f2; border-bottom: 1px solid #e8e8e8;
+      padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+    }
+    .mc-avatar {
+      width: 30px; height: 30px; border-radius: 50%; background: #0ea5e9;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .mc-name { font-size: 13px; font-weight: 700; }
+    .mc-status { font-size: 10px; color: var(--accent); }
+    .mc-messages { padding: 14px 14px 8px; background: #f9f8f5; display: flex; flex-direction: column; gap: 8px; }
+    .mc-bubble {
+      max-width: 80%; padding: 8px 12px; border-radius: 14px;
+      font-size: 12px; line-height: 1.5; position: relative;
+    }
+    .mc-bubble.in {
+      background: #fff; border: 1px solid #ebebeb; border-bottom-left-radius: 4px;
+      align-self: flex-start;
+    }
+    .mc-bubble.out {
+      background: #dcf8c6; border-bottom-right-radius: 4px;
+      align-self: flex-end;
+    }
+    .mc-time { font-size: 9px; color: #aaa; margin-top: 4px; text-align: right; }
+    .mc-ai-box {
+      margin: 0 14px 14px; background: #fffbea; border: 1px solid #fde68a;
+      border-radius: 12px; padding: 10px 12px;
+    }
+    .mc-ai-label { font-size: 9.5px; font-weight: 800; color: #b45309; letter-spacing: .05em; margin-bottom: 5px; }
+    .mc-ai-text { font-size: 11.5px; color: #111; line-height: 1.5; margin-bottom: 8px; }
+    .mc-ai-btns { display: flex; gap: 6px; }
+    .mc-ai-btn {
+      flex: 1; padding: 5px; border-radius: 7px; font-size: 10px; font-weight: 700;
+      text-align: center; cursor: pointer;
+    }
+    .mc-ai-btn.send { background: #111; color: #fff; }
+    .mc-ai-btn.edit { background: #f5f5f5; color: #666; }
+    .mc-input {
+      display: flex; align-items: center; gap: 8px;
+      border-top: 1px solid #ebebeb; padding: 10px 12px; background: #fff;
+    }
+    .mc-input-box {
+      flex: 1; background: #f5f5f5; border-radius: 20px;
+      padding: 7px 12px; font-size: 11px; color: #999;
+    }
+    .mc-send-btn {
+      width: 28px; height: 28px; border-radius: 50%; background: #111;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mc-send-btn svg { width: 12px; height: 12px; fill: #fff; }
+
+    /* ─── Mockup: Continuity (unread / reopen) ──────────────────────────────── */
+    .mock-notify {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .mn-card {
+      background: #fff; border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+      box-shadow: var(--shadow); transition: transform .2s;
+    }
+    .mn-card:hover { transform: translateX(4px); }
+    .mn-avatar {
+      width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: #fff;
+    }
+    .mn-info { flex: 1; min-width: 0; }
+    .mn-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+    .mn-msg  { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mn-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .mn-time { font-size: 10px; color: var(--muted); }
+    .mn-badge {
+      background: var(--accent); color: #fff; font-size: 9px; font-weight: 900;
+      border-radius: 999px; padding: 2px 7px; min-width: 20px; text-align: center;
+    }
+    .mn-tag {
+      font-size: 9px; font-weight: 700; border-radius: 999px; padding: 2px 8px;
+    }
+    .mn-tag.new      { background: #dcf5e7; color: #15803d; }
+    .mn-tag.waiting  { background: #fef9c3; color: #a16207; }
+    .mn-tag.resolved { background: #f3f4f6; color: #6b7280; }
+
+    .mn-reopen {
+      display: flex; align-items: center; gap: 6px;
+      background: #dcf5e7; border: 1px solid #86efac; border-radius: 10px;
+      padding: 8px 12px; font-size: 11px; color: #15803d; font-weight: 600;
+    }
+
+    /* ─── Setup ─────────────────────────────────────────────────────────────── */
     .steps-section {
       background: var(--white);
       border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
@@ -294,6 +343,11 @@
     .steps-inner {
       max-width: 1160px; margin: 0 auto; padding: 100px 40px;
       display: grid; grid-template-columns: 1fr 1fr; gap: 100px; align-items: center;
+    }
+    .section-eyebrow {
+      display: inline-block; background: var(--accent-light); color: var(--accent-dark);
+      font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+      padding: 5px 12px; border-radius: 999px; margin-bottom: 16px;
     }
     .steps-list { display: flex; flex-direction: column; }
     .step {
@@ -303,62 +357,66 @@
     .step:first-child { padding-top: 0; }
     .step:last-child { border-bottom: none; padding-bottom: 0; }
     .step-num {
-      width: 34px; height: 34px; border-radius: 10px;
-      background: var(--ink); color: #fff; font-size: 14px; font-weight: 900;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      width: 34px; height: 34px; border-radius: 10px; background: var(--ink); color: #fff;
+      font-size: 14px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .step h3 { font-size: 16px; font-weight: 800; margin-bottom: 4px; letter-spacing: -.01em; }
     .step p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
-    .steps-visual {
-      display: flex; align-items: center; justify-content: center;
+    .steps-h2 {
+      font-size: clamp(30px, 4vw, 48px); font-weight: 900;
+      letter-spacing: -.03em; line-height: 1.1; margin-bottom: 12px;
     }
+    .steps-sub { color: var(--muted); font-size: 16px; margin-bottom: 48px; }
+    .steps-visual { display: flex; align-items: center; justify-content: center; }
     .qr-mockup {
       background: #fff; border: 1px solid var(--border);
       border-radius: 24px; padding: 32px; width: 280px;
-      box-shadow: var(--shadow-lg);
-      animation: float-idle 4s ease-in-out infinite;
-      text-align: center;
+      box-shadow: var(--shadow-lg); text-align: center;
+      animation: bob 4s ease-in-out infinite;
     }
+    @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
     .qr-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
     .qr-sub   { font-size: 11px; color: var(--muted); margin-bottom: 20px; }
-    .qr-grid  {
-      width: 140px; height: 140px; margin: 0 auto 20px;
-      display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
-    }
+    .qr-grid  { width: 140px; height: 140px; margin: 0 auto 20px; display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
     .qr-cell { border-radius: 2px; }
-    .qr-cell.b { background: #111; }
-    .qr-cell.w { background: #f5f5f5; }
+    .qr-cell.b { background: #111; } .qr-cell.w { background: #f5f5f5; }
     .qr-steps { display: flex; flex-direction: column; gap: 8px; text-align: left; }
     .qr-step { display: flex; align-items: flex-start; gap: 8px; font-size: 11px; color: var(--muted); }
-    .qr-step-num {
-      width: 16px; height: 16px; border-radius: 50%;
-      background: var(--accent); color: #fff;
+    .qr-step-n {
+      width: 16px; height: 16px; border-radius: 50%; background: var(--accent); color: #fff;
       font-size: 9px; font-weight: 900; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
     }
 
-    /* ── Privacy ── */
+    /* ─── Privacy ───────────────────────────────────────────────────────────── */
+    .privacy-section {
+      max-width: 1160px; margin: 0 auto; padding: 100px 40px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start;
+    }
+    .privacy-section h2 {
+      font-size: clamp(28px, 3.5vw, 40px); font-weight: 900;
+      letter-spacing: -.03em; margin-bottom: 14px;
+    }
+    .privacy-section p { color: var(--muted); font-size: 16px; line-height: 1.75; margin-bottom: 6px; }
     .privacy-grid { display: flex; flex-direction: column; gap: 12px; }
     .privacy-card {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: 14px; padding: 18px 20px;
-      display: flex; gap: 14px; align-items: flex-start;
+      background: var(--white); border: 1px solid var(--border); border-radius: 14px;
+      padding: 18px 20px; display: flex; gap: 14px; align-items: flex-start;
       transition: transform .15s;
     }
     .privacy-card:hover { transform: translateX(4px); }
-    .pc-icon  { font-size: 22px; flex-shrink: 0; }
+    .pc-icon { font-size: 22px; flex-shrink: 0; }
     .pc-title { font-size: 14px; font-weight: 800; margin-bottom: 2px; }
     .pc-text  { font-size: 12px; color: var(--muted); }
 
-    /* ── CTA ── */
+    /* ─── CTA ───────────────────────────────────────────────────────────────── */
     .cta {
-      background: var(--ink); color: #fff;
-      text-align: center; padding: 120px 40px;
-      position: relative; overflow: hidden;
+      background: var(--ink); color: #fff; text-align: center;
+      padding: 120px 40px; position: relative; overflow: hidden;
     }
     .cta-blob { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
-    .cta-blob-1 { width: 500px; height: 500px; background: rgba(37,211,102,.25); top: -100px; left: 10%; }
-    .cta-blob-2 { width: 400px; height: 400px; background: rgba(18,140,126,.2);  bottom: -100px; right: 10%; }
+    .cta-blob-1 { width: 500px; height: 500px; background: rgba(37,211,102,.22); top: -100px; left: 10%; }
+    .cta-blob-2 { width: 400px; height: 400px; background: rgba(18,140,126,.18); bottom: -100px; right: 10%; }
     .cta-inner { position: relative; z-index: 1; }
     .cta h2 {
       font-size: clamp(36px, 6vw, 72px); font-weight: 900;
@@ -371,335 +429,338 @@
       background: #fff; color: var(--ink); text-decoration: none;
       padding: 16px 32px; border-radius: 999px;
       font-size: 17px; font-weight: 900; letter-spacing: -.02em;
-      box-shadow: 0 8px 32px rgba(0,0,0,.3);
-      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 8px 32px rgba(0,0,0,.3); transition: transform .15s, box-shadow .15s;
     }
     .btn-cta:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(0,0,0,.4); }
     .cta-note { margin-top: 20px; font-size: 13px; color: rgba(255,255,255,.4); }
     .cta-note a { color: rgba(255,255,255,.5); }
 
-    /* ── Footer ── */
+    /* ─── Footer ────────────────────────────────────────────────────────────── */
     footer {
-      padding: 28px 48px;
-      border-top: 1px solid var(--border);
+      padding: 28px 48px; border-top: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
-      color: var(--muted); font-size: 13px; flex-wrap: wrap; gap: 12px;
-      background: var(--bg);
+      color: var(--muted); font-size: 13px; flex-wrap: wrap; gap: 12px; background: var(--bg);
     }
     footer a { color: var(--muted); text-decoration: none; transition: color .15s; }
     footer a:hover { color: var(--ink); }
 
-    /* ── Responsive ── */
-    @media (max-width: 900px) {
-      nav { padding: 0 20px; }
-      .nav-links { display: none; }
-      #kanban-demo { display: none; }
-      .villain-inner { grid-template-columns: 1fr; gap: 48px; }
+    /* ─── Responsive ────────────────────────────────────────────────────────── */
+    @media (max-width: 960px) {
+      nav { padding: 0 20px; } .nav-links { display: none; }
+      .problem-inner { grid-template-columns: 1fr; gap: 48px; }
+      .showcase { grid-template-columns: 1fr; gap: 40px; }
+      .showcase.flip { direction: ltr; }
       .steps-inner { grid-template-columns: 1fr; gap: 48px; }
       .steps-visual { display: none; }
-      .feature-grid { grid-template-columns: 1fr 1fr; }
-      .section { padding: 72px 24px; }
+      .privacy-section { grid-template-columns: 1fr; gap: 40px; }
       footer { padding: 24px; justify-content: center; }
-    }
-    @media (max-width: 580px) {
-      .feature-grid { grid-template-columns: 1fr; }
     }
 
     /* Mobile warning */
-    #mobile-warning { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; padding: 24px; }
+    #mobile-warning { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.6); align-items: center; justify-content: center; padding: 24px; }
     #mobile-warning.show { display: flex; }
-    .mobile-warning-box { background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px 28px; max-width: 340px; text-align: center; }
-    .mobile-warning-box .mw-icon { font-size: 40px; margin-bottom: 16px; }
-    .mobile-warning-box h3 { font-size: 20px; font-weight: 700; margin-bottom: 10px; color: #fff; }
-    .mobile-warning-box p  { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.6; margin-bottom: 24px; }
-    .mw-close { display: inline-block; padding: 12px 28px; background: rgba(255,255,255,0.1); color: #fff; border-radius: 100px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; width: 100%; }
+    .mw-box { background: #1a1a1a; border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 32px 28px; max-width: 340px; text-align: center; }
+    .mw-box .mw-icon { font-size: 40px; margin-bottom: 16px; }
+    .mw-box h3 { font-size: 20px; font-weight: 700; margin-bottom: 10px; color: #fff; }
+    .mw-box p  { font-size: 15px; color: rgba(255,255,255,.6); line-height: 1.6; margin-bottom: 24px; }
+    .mw-close { width: 100%; padding: 12px 28px; background: rgba(255,255,255,.1); color: #fff; border-radius: 100px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
   </style>
 </head>
 <body>
 
 <!-- Nav -->
 <nav>
-  <a class="nav-logo" href="#">
-    <img src="icon.png" alt="WhatsApp Copilot" />
-    Copilot
-  </a>
+  <a class="nav-logo" href="#"><img src="icon.png" alt="WhatsApp Copilot" /> Copilot</a>
   <div class="nav-links">
-    <a href="#features">Funciones</a>
+    <a href="#pipeline">Pipeline</a>
+    <a href="#ai">IA</a>
     <a href="#setup">Instalación</a>
-    <a href="#privacy">Privacidad</a>
   </div>
   <a class="nav-btn" href="https://github.com/stajulian5/wa-copilot/releases/latest">
-    Descargar
+    Descargar gratis
   </a>
 </nav>
 
-<!-- Floating Kanban demo -->
-<div id="kanban-demo">
-  <div class="km-shell">
-    <div class="km-titlebar">
-      <div class="km-dot km-dot-r"></div>
-      <div class="km-dot km-dot-y"></div>
-      <div class="km-dot km-dot-g"></div>
-      <div class="km-app-name">✈️ WhatsApp Copilot</div>
-    </div>
-    <div class="km-body">
-      <!-- New column -->
-      <div class="km-col">
-        <div class="km-col-hdr">
-          🆕 New
-          <div class="km-count green">3</div>
-        </div>
-        <div class="km-card">
-          <div class="km-card-name">Carmina GP</div>
-          <div class="km-card-preview">¿Hay respuesta del re…</div>
-          <div class="km-card-meta">
-            <div class="km-card-time">hace 2 min</div>
-            <div class="km-badge">4</div>
-          </div>
-        </div>
-        <div class="km-card">
-          <div class="km-card-name">Panel Proptech ☕</div>
-          <div class="km-card-preview">Vicky: Me gustan las…</div>
-          <div class="km-card-meta">
-            <div class="km-card-time">ayer</div>
-            <div class="km-badge">72</div>
-          </div>
-        </div>
-      </div>
-      <!-- Open column -->
-      <div class="km-col">
-        <div class="km-col-hdr">
-          💬 Open
-          <div class="km-count">2</div>
-        </div>
-        <div class="km-card">
-          <div class="km-card-name">Juliana Gomez</div>
-          <div class="km-card-preview">No me han compartido…</div>
-          <div class="km-card-meta">
-            <div class="km-card-time">11:19</div>
-            <div class="km-badge">1</div>
-          </div>
-        </div>
-        <div class="km-card">
-          <div class="km-card-name">Pissarro 1406</div>
-          <div class="km-card-preview">Leslie: Hola buenas n…</div>
-          <div class="km-card-meta">
-            <div class="km-card-time">ayer</div>
-            <div class="km-badge gray">·</div>
-          </div>
-        </div>
-      </div>
-      <!-- Resolved column -->
-      <div class="km-col">
-        <div class="km-col-hdr">
-          ✅ Done
-          <div class="km-count">1</div>
-        </div>
-        <div class="km-card">
-          <div class="km-card-name">Nimbe Del Rosario</div>
-          <div class="km-card-preview">🎤 Nota de voz</div>
-          <div class="km-card-meta">
-            <div class="km-card-time">jue</div>
-            <div class="km-badge gray">·</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- Hero -->
 <section class="hero">
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-  <div class="blob blob-3"></div>
-
+  <div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div>
   <div class="hero-inner">
-    <div class="hero-badge">✈️ macOS · WhatsApp · IA</div>
-
+    <div class="hero-badge">✈️ macOS · WhatsApp · Código abierto</div>
     <h1>
-      Nunca pierdas<br/>
-      el hilo con un <span class="wavy">broker</span>.
+      50 clientes.<br/>
+      Un solo <span class="wavy">WhatsApp</span>.<br/>
+      <span class="accent">Ninguno se pierde.</span>
     </h1>
-
     <p class="hero-tagline">
-      <strong>WhatsApp Copilot es el CRM que vive en tu Mac.</strong><br/>
-      Kanban visual, chat integrado, sugerencias con IA. Todo en tiempo real, sin servidores ni suscripciones.
+      <strong>WhatsApp Copilot es el CRM para KAMs que dan servicio por WhatsApp.</strong><br/>
+      Kanban visual, respuestas con IA y sincronización en tiempo real — todo en tu Mac, sin servidores ni suscripciones.
     </p>
 
-    <div class="hero-actions">
-      <a class="btn-primary" id="install-btn"
-         href="https://github.com/stajulian5/wa-copilot/releases/latest">
-        ⬇ Descargar para macOS
-      </a>
-      <a class="btn-secondary" href="https://github.com/stajulian5/wa-copilot">
-        Ver código ↗
-      </a>
+    <div class="hero-stats">
+      <div class="stat-pill"><div class="dot"></div> Tiempo real</div>
+      <div class="stat-pill"><div class="dot"></div> Sin nube</div>
+      <div class="stat-pill"><div class="dot"></div> IA integrada</div>
+      <div class="stat-pill"><div class="dot"></div> Open source</div>
     </div>
-    <p class="hero-note">Abre el .dmg · arrastra a Aplicaciones · listo en 30 segundos</p>
-    <p class="hero-note">macOS 12+ · Apple Silicon &amp; Intel · <a href="https://github.com/stajulian5/wa-copilot" style="color:inherit">⭐ Star en GitHub</a></p>
+
+    <div class="hero-actions">
+      <a class="btn-primary" id="install-btn" href="https://github.com/stajulian5/wa-copilot/releases/latest">
+        ⬇ Descargar para macOS — Gratis
+      </a>
+      <a class="btn-secondary" href="https://github.com/stajulian5/wa-copilot">Ver código ↗</a>
+    </div>
+    <p class="hero-note">Abre el .dmg · arrastra a Aplicaciones · listo en 30 segundos · macOS 12+</p>
   </div>
 </section>
 
 <!-- Marquee -->
-<div class="marquee-wrap">
-  <div class="marquee-inner">
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Kanban de brokers</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Chat en tiempo real</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Sugerencias con IA</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Grupos y 1 a 1</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Multi-cuenta</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Sin servidores</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Código abierto</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Auto-actualización</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Kanban de brokers</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Chat en tiempo real</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Sugerencias con IA</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Grupos y 1 a 1</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Multi-cuenta</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Sin servidores</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Código abierto</span>
-    <span class="marquee-item"><span class="marquee-dot">✦</span> Auto-actualización</span>
-  </div>
-</div>
+<div class="marquee-wrap"><div class="marquee-inner">
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Pipeline de clientes</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Chat en tiempo real</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Respuestas con IA</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Re-apertura automática</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Envío de archivos</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Multi-cuenta</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Sin servidores</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Open source</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Pipeline de clientes</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Chat en tiempo real</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Respuestas con IA</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Re-apertura automática</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Envío de archivos</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Multi-cuenta</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Sin servidores</span>
+  <span class="marquee-item"><span class="marquee-dot">✦</span> Open source</span>
+</div></div>
 
-<!-- Villain section -->
-<div class="villain-section">
-  <div class="villain-inner">
-    <div class="villain-text">
+<!-- Problem -->
+<div class="problem-section">
+  <div class="problem-inner">
+    <div class="problem-text">
       <div class="section-eyebrow" style="background:rgba(255,79,79,.1);color:#c0392b;">El problema</div>
-      <h2>WhatsApp no es<br/>un CRM.</h2>
-      <p>Los brokers te mandan mensajes a cualquier hora. Algunos los respondes enseguida, otros se van al fondo de la lista y desaparecen. No hay pipeline, no hay historial de conversaciones, no hay forma de saber en qué estado está cada relación.</p>
-      <p style="margin-top:16px">Copilot lo resuelve desde dos ángulos.</p>
+      <h2>WhatsApp no fue diseñado para dar servicio a escala.</h2>
+      <p>Como KAM, tu WhatsApp es tu canal principal. Pero también es el mismo lugar donde recibes memes, fotos de familia y grupos de la cuadra. Las conversaciones importantes se pierden en el ruido.</p>
+      <p>No hay forma nativa de saber quién está esperando respuesta, quién ya cerró o quién no has contactado en semanas.</p>
     </div>
-    <div class="villain-angles">
-      <div class="angle-card">
-        <div class="angle-num">01</div>
-        <h3>Nunca más un broker olvidado</h3>
-        <p>Cada conversación vive en una columna del Kanban. Arrastra el broker de <em>New</em> a <em>Open Conversation</em> cuando empiezas a hablar, y a <em>All Resolved</em> cuando cierras. Si vuelven a escribir, la tarjeta salta sola a <em>New</em>.</p>
+    <div class="pain-cards">
+      <div class="pain-card">
+        <h3>Conversaciones enterradas</h3>
+        <p>Un cliente preguntó algo hace tres días. Lo viste, pensaste "luego le respondo", y desapareció al fondo de la lista. Nunca le respondiste.</p>
       </div>
-      <div class="angle-card">
-        <div class="angle-num">02</div>
-        <h3>Responde más rápido — con IA</h3>
-        <p>Copilot lee el historial completo de la conversación, el estado del KYC y la etapa del pipeline, y genera una respuesta lista para enviar. Tú decides si la mandas tal cual o la editas — siempre en tu voz.</p>
+      <div class="pain-card">
+        <h3>Sin visibilidad del pipeline</h3>
+        <p>¿Cuántos clientes están en proceso activo? ¿Cuántos llevan más de una semana sin contacto? WhatsApp no te da esa vista.</p>
+      </div>
+      <div class="pain-card">
+        <h3>Responder en volumen es agotador</h3>
+        <p>Cuando tienes 50+ conversaciones activas, cada respuesta parte de cero. No hay contexto rápido, no hay plantillas inteligentes, no hay ayuda.</p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Features -->
-<div class="section" id="features">
-  <div class="section-eyebrow">Funciones</div>
-  <h2>Todo lo que necesitas.<br/>Nada que sobre.</h2>
-  <p class="section-sub">Diseñado para KAMs que pasan el día en WhatsApp y necesitan saber en todo momento en qué punto está cada broker.</p>
-
-  <div class="feature-grid">
-    <div class="feature-card">
-      <div class="fc-icon">📋</div>
-      <h3>Kanban visual</h3>
-      <p>Cuatro columnas: New, Open Conversation, Waiting For, All Resolved. Arrastra tarjetas con el mouse o usa el menú rápido desde el chat.</p>
-    </div>
-    <div class="feature-card">
-      <div class="fc-icon">💬</div>
-      <h3>Chat integrado</h3>
-      <p>Lee y responde mensajes de WhatsApp sin salir de Copilot. Historial completo, grupos con nombre del remitente, notas de voz e imágenes.</p>
-    </div>
-    <div class="feature-card">
-      <div class="fc-icon">✨</div>
-      <h3>Sugerencias con IA</h3>
-      <p>Claude Haiku redacta una respuesta contextual con un toque. ⌘↵ para enviarla directo, o edítala antes. Nunca una respuesta genérica.</p>
-    </div>
-    <div class="feature-card">
-      <div class="fc-icon">📎</div>
-      <h3>Envía archivos</h3>
-      <p>Adjunta imágenes, PDFs, documentos y más directamente desde el chat. Sin cambiar de app ni pasar por el teléfono.</p>
-    </div>
-    <div class="feature-card">
-      <div class="fc-icon">👥</div>
-      <h3>Multi-cuenta</h3>
-      <p>Conecta varios números de WhatsApp simultáneamente. Cambia entre ellos con un clic desde la barra superior.</p>
-    </div>
-    <div class="feature-card">
-      <div class="fc-icon">🔍</div>
-      <h3>Búsqueda en chat</h3>
-      <p>⌘F dentro de cualquier conversación para buscar un mensaje. Los resultados se resaltan en amarillo al instante.</p>
-    </div>
-    <div class="feature-card">
-      <div class="fc-icon">🔔</div>
-      <h3>Snooze de brokers</h3>
-      <p>Pospón una conversación hasta que sea relevante. La tarjeta vuelve a New automáticamente en el momento que eliges.</p>
-    </div>
-    <div class="feature-card">
-      <div class="fc-icon">🔄</div>
-      <h3>Sincronización automática</h3>
-      <p>Al encender la Mac, Copilot recupera los mensajes perdidos mientras estaba apagado. Sin pérdidas silenciosas.</p>
-    </div>
-    <div class="feature-card">
-      <div class="fc-icon">📊</div>
-      <h3>Google Sheets sync</h3>
-      <p>Conecta tu hoja de brokers. Los nombres y estados se actualizan automáticamente en el Kanban.</p>
+<!-- ── Feature 1: Kanban pipeline ── -->
+<hr class="showcase-divider" />
+<div class="showcase" id="pipeline">
+  <div class="showcase-text">
+    <div class="eyebrow">Pipeline</div>
+    <h2>Ve el estado de cada cliente de un vistazo.</h2>
+    <p>Cada conversación de WhatsApp vive en una columna. Arrastra tus contactos a medida que avanza la relación — sin hojas de cálculo, sin anotaciones en papel.</p>
+    <ul>
+      <li>4 etapas: Nuevo, Conversación Activa, En Espera, Resuelto</li>
+      <li>Cuando un cliente responde, la tarjeta vuelve a Nuevo automáticamente</li>
+      <li>Badges de no leídos siempre visibles en el ícono del dock</li>
+      <li>Busca cualquier cliente por nombre con ⌘K</li>
+    </ul>
+  </div>
+  <div>
+    <div class="mock-kanban">
+      <div class="mock-titlebar">
+        <div class="tb-dot tb-r"></div><div class="tb-dot tb-y"></div><div class="tb-dot tb-g"></div>
+        <div class="tb-title">✈️ WhatsApp Copilot</div>
+      </div>
+      <div class="mock-body">
+        <div class="mk-col">
+          <div class="mk-hdr">🆕 Nuevo <span class="mk-count green">3</span></div>
+          <div class="mk-card">
+            <div class="mk-name">María Torres</div>
+            <div class="mk-preview">¿Hay respuesta del dep…</div>
+            <div class="mk-foot"><div class="mk-time">hace 5 min</div><div class="mk-badge">3</div></div>
+          </div>
+          <div class="mk-card">
+            <div class="mk-name">Carlos Ruiz</div>
+            <div class="mk-preview">Me interesa el plan de…</div>
+            <div class="mk-foot"><div class="mk-time">hace 2 h</div><div class="mk-badge">1</div></div>
+          </div>
+          <div class="mk-card">
+            <div class="mk-name">Ana Méndez</div>
+            <div class="mk-preview">🎤 Nota de voz</div>
+            <div class="mk-foot"><div class="mk-time">ayer</div><div class="mk-badge">7</div></div>
+          </div>
+        </div>
+        <div class="mk-col">
+          <div class="mk-hdr">💬 Activo <span class="mk-count">2</span></div>
+          <div class="mk-card">
+            <div class="mk-name">Pedro Lara</div>
+            <div class="mk-preview">Perfecto, mandamos los…</div>
+            <div class="mk-foot"><div class="mk-time">10:30</div><div class="mk-badge gray">·</div></div>
+          </div>
+          <div class="mk-card">
+            <div class="mk-name">Sofía Vega</div>
+            <div class="mk-preview">📎 Contrato_v2.pdf</div>
+            <div class="mk-foot"><div class="mk-time">lun</div><div class="mk-badge gray">·</div></div>
+          </div>
+        </div>
+        <div class="mk-col">
+          <div class="mk-hdr">✅ Resuelto <span class="mk-count">1</span></div>
+          <div class="mk-card">
+            <div class="mk-name">Luis Herrera</div>
+            <div class="mk-preview">Muchas gracias por todo</div>
+            <div class="mk-foot"><div class="mk-time">vie</div><div class="mk-badge gray">·</div></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
+<!-- ── Feature 2: AI replies ── -->
+<hr class="showcase-divider" />
+<div class="showcase flip" id="ai">
+  <div class="showcase-text">
+    <div class="eyebrow">Respuestas con IA</div>
+    <h2>Responde con contexto, en segundos.</h2>
+    <p>Copilot lee el historial completo de la conversación y genera una respuesta lista para enviar. Tú apruebas, editas o descartas — siempre en tu voz, nunca genérica.</p>
+    <ul>
+      <li>⌘↵ para aceptar y enviar directamente</li>
+      <li>Edita antes de enviar si quieres ajustar el tono</li>
+      <li>La IA conoce el estado del cliente en el pipeline</li>
+      <li>Plantillas reutilizables para respuestas frecuentes</li>
+    </ul>
+  </div>
+  <div>
+    <div class="mock-chat">
+      <div class="mc-header">
+        <div class="mc-avatar">MR</div>
+        <div><div class="mc-name">María Torres</div><div class="mc-status">● en línea</div></div>
+      </div>
+      <div class="mc-messages">
+        <div class="mc-bubble in">¿Cuándo me pueden dar respuesta sobre la solicitud que mandé la semana pasada?<div class="mc-time">9:12</div></div>
+        <div class="mc-bubble out">Hola María, te reviso y te comento en unos minutos.<div class="mc-time">9:45 ✓✓</div></div>
+        <div class="mc-bubble in">Perfecto, quedamos en eso. Es urgente porque tenemos junta el jueves.<div class="mc-time">9:46</div></div>
+      </div>
+      <div class="mc-ai-box">
+        <div class="mc-ai-label">✨ SUGERENCIA IA — ⌘↵ para enviar</div>
+        <div class="mc-ai-text">Hola María, acabo de revisar tu solicitud. Ya está en proceso y deberías tener la respuesta antes del miércoles, con tiempo para tu junta del jueves. ¿Te puedo enviar el avance por este mismo chat?</div>
+        <div class="mc-ai-btns">
+          <div class="mc-ai-btn send">Enviar ⌘↵</div>
+          <div class="mc-ai-btn edit">Editar</div>
+        </div>
+      </div>
+      <div class="mc-input">
+        <div class="mc-input-box">Escribe un mensaje…</div>
+        <div class="mc-send-btn"><svg viewBox="0 0 16 16"><path d="M14 8L2 2l3 6-3 6 12-6z"/></svg></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Feature 3: Never miss anyone ── -->
+<hr class="showcase-divider" />
+<div class="showcase">
+  <div class="showcase-text">
+    <div class="eyebrow">Continuidad de servicio</div>
+    <h2>Ningún cliente cae en el olvido.</h2>
+    <p>Cuando un cliente escribe de nuevo, Copilot lo mueve automáticamente a la columna Nuevo — aunque estuviera resuelto. Y si necesitas retomarlo después, el snooze lo pone de vuelta en tu radar en el momento exacto.</p>
+    <ul>
+      <li>Re-apertura automática al recibir un mensaje nuevo</li>
+      <li>Snooze: pospón una conversación hasta que sea el momento correcto</li>
+      <li>Historial completo siempre a un clic</li>
+      <li>Busca cualquier mensaje con ⌘F dentro del chat</li>
+    </ul>
+  </div>
+  <div>
+    <div class="mock-notify">
+      <div class="mn-card">
+        <div class="mn-avatar" style="background:#8b5cf6;">CV</div>
+        <div class="mn-info">
+          <div class="mn-name">Carlos Vázquez</div>
+          <div class="mn-msg">Disculpa la tardanza, tengo una pregunta sobre el contrato</div>
+        </div>
+        <div class="mn-meta">
+          <div class="mn-time">hace 3 min</div>
+          <div class="mn-badge">2</div>
+        </div>
+      </div>
+      <div class="mn-reopen">
+        ↩ Conversación re-abierta automáticamente — movida a <strong>Nuevo</strong>
+      </div>
+      <div class="mn-card">
+        <div class="mn-avatar" style="background:#10b981;">SL</div>
+        <div class="mn-info">
+          <div class="mn-name">Sandra López</div>
+          <div class="mn-msg">📅 Snooze hasta mañana 9:00 AM</div>
+        </div>
+        <div class="mn-meta">
+          <div class="mn-time">mañana</div>
+          <div class="mn-tag waiting">⏳ En espera</div>
+        </div>
+      </div>
+      <div class="mn-card">
+        <div class="mn-avatar" style="background:#f59e0b;">JM</div>
+        <div class="mn-info">
+          <div class="mn-name">Jorge Muñoz</div>
+          <div class="mn-msg">Muchas gracias, todo perfecto</div>
+        </div>
+        <div class="mn-meta">
+          <div class="mn-time">vie</div>
+          <div class="mn-tag resolved">✅ Resuelto</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<hr class="showcase-divider" />
 
 <!-- Setup -->
 <div class="steps-section" id="setup">
   <div class="steps-inner">
     <div>
       <div class="section-eyebrow">Instalación</div>
-      <h2>En marcha<br/>en 3 minutos.</h2>
-      <p class="section-sub" style="margin-bottom:48px">Sin Terminal. Sin configuración. Solo descarga y escanea.</p>
-
+      <h2 class="steps-h2">En marcha<br/>en 3 minutos.</h2>
+      <p class="steps-sub">Sin Terminal. Sin configuración técnica. Solo descarga y escanea.</p>
       <div class="steps-list">
         <div class="step">
           <div class="step-num">1</div>
-          <div>
-            <h3>Descarga e instala</h3>
-            <p>Abre el .dmg, arrastra WhatsApp Copilot a tu carpeta de Aplicaciones. Doble clic para abrir.</p>
-          </div>
+          <div><h3>Descarga e instala</h3><p>Abre el .dmg, arrastra WhatsApp Copilot a Aplicaciones y ábrelo. macOS lo verifica automáticamente — sin alertas.</p></div>
         </div>
         <div class="step">
           <div class="step-num">2</div>
-          <div>
-            <h3>Escanea el código QR</h3>
-            <p>Abre WhatsApp en tu teléfono → Dispositivos vinculados → Vincular dispositivo → apunta la cámara al código. Listo.</p>
-          </div>
+          <div><h3>Escanea el código QR</h3><p>Abre WhatsApp en tu teléfono → Dispositivos vinculados → Vincular dispositivo → apunta la cámara. Igual que WhatsApp Web.</p></div>
         </div>
         <div class="step">
           <div class="step-num">3</div>
-          <div>
-            <h3>Tus brokers aparecen solos</h3>
-            <p>Copilot sincroniza tu historial y coloca cada contacto en el Kanban. Empieza a organizar desde el primer minuto.</p>
-          </div>
+          <div><h3>Tu historial aparece solo</h3><p>Copilot sincroniza tus conversaciones y las organiza en el Kanban. Empieza a dar seguimiento desde el primer minuto.</p></div>
         </div>
       </div>
     </div>
-
     <div class="steps-visual">
       <div class="qr-mockup">
         <div class="qr-title">Vincula tu WhatsApp</div>
-        <div class="qr-sub">Escanea con tu teléfono</div>
-        <!-- Simple QR pattern illustration -->
+        <div class="qr-sub">Escanea desde tu teléfono</div>
         <div class="qr-grid">
-          <!-- Row 1 -->
           <div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell b"></div>
-          <!-- Row 2 -->
           <div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div>
-          <!-- Row 3 -->
           <div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div>
-          <!-- Row 4 -->
           <div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div>
-          <!-- Row 5 -->
           <div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div>
-          <!-- Row 6 -->
           <div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div>
-          <!-- Row 7 -->
           <div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell w"></div><div class="qr-cell b"></div><div class="qr-cell b"></div><div class="qr-cell b"></div>
         </div>
         <div class="qr-steps">
-          <div class="qr-step"><div class="qr-step-num">1</div><span>Abre WhatsApp en tu teléfono</span></div>
-          <div class="qr-step"><div class="qr-step-num">2</div><span>Dispositivos vinculados → Vincular</span></div>
-          <div class="qr-step"><div class="qr-step-num">3</div><span>Apunta la cámara aquí ↑</span></div>
+          <div class="qr-step"><div class="qr-step-n">1</div><span>Abre WhatsApp en tu teléfono</span></div>
+          <div class="qr-step"><div class="qr-step-n">2</div><span>Dispositivos vinculados → Vincular</span></div>
+          <div class="qr-step"><div class="qr-step-n">3</div><span>Apunta la cámara al código ↑</span></div>
         </div>
       </div>
     </div>
@@ -707,70 +768,39 @@
 </div>
 
 <!-- Privacy -->
-<div class="section" id="privacy">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;">
+<div class="section">
+  <div class="privacy-section" style="padding:0">
     <div>
       <div class="section-eyebrow">Privacidad</div>
-      <h2>Tus datos nunca salen de tu Mac.</h2>
-      <p style="color:var(--muted);font-size:16px;line-height:1.75;margin-bottom:20px">
-        Copilot no tiene backend propio. Los mensajes van de WhatsApp directo a tu pantalla — sin pasar por ningún servidor nuestro.
-      </p>
-      <a href="https://github.com/stajulian5/wa-copilot" style="color:var(--accent-dark);text-decoration:none;font-weight:600;">Ver el código fuente →</a>
+      <h2>Tus conversaciones nunca salen de tu Mac.</h2>
+      <p>No hay backend de Copilot. Tus mensajes viajan de WhatsApp directo a tu pantalla — sin pasar por ningún servidor externo.</p>
+      <p style="margin-top:8px"><a href="https://github.com/stajulian5/wa-copilot" style="color:var(--accent-dark);text-decoration:none;font-weight:600;">Ver el código fuente completo →</a></p>
     </div>
     <div class="privacy-grid">
-      <div class="privacy-card">
-        <div class="pc-icon">💾</div>
-        <div>
-          <div class="pc-title">SQLite local</div>
-          <div class="pc-text">Todos tus mensajes y contactos se guardan en un archivo en tu Mac. Tú controlas el backup.</div>
-        </div>
-      </div>
-      <div class="privacy-card">
-        <div class="pc-icon">🔑</div>
-        <div>
-          <div class="pc-title">Sesión en Keychain</div>
-          <div class="pc-text">Tu sesión de WhatsApp se almacena en el Keychain de macOS. Cifrada, local, solo tuya.</div>
-        </div>
-      </div>
-      <div class="privacy-card">
-        <div class="pc-icon">🚫</div>
-        <div>
-          <div class="pc-title">Sin servidores de terceros</div>
-          <div class="pc-text">Tu Mac habla directamente con WhatsApp. Nada pasa por servidores de Mica ni de nadie más.</div>
-        </div>
-      </div>
-      <div class="privacy-card">
-        <div class="pc-icon">👁</div>
-        <div>
-          <div class="pc-title">Código abierto</div>
-          <div class="pc-text">Cada línea de código está en GitHub. Puedes leer exactamente qué corre en tu Mac.</div>
-        </div>
-      </div>
+      <div class="privacy-card"><div class="pc-icon">💾</div><div><div class="pc-title">SQLite local</div><div class="pc-text">Todos tus mensajes y contactos se almacenan en tu Mac. Tú controlas el backup.</div></div></div>
+      <div class="privacy-card"><div class="pc-icon">🔑</div><div><div class="pc-title">Sesión en Keychain</div><div class="pc-text">Tu sesión de WhatsApp se guarda en el Keychain de macOS. Cifrada, local, inaccesible para terceros.</div></div></div>
+      <div class="privacy-card"><div class="pc-icon">🚫</div><div><div class="pc-title">Sin servidores de terceros</div><div class="pc-text">Tu Mac habla directamente con WhatsApp. Ningún dato pasa por servidores de nadie más.</div></div></div>
+      <div class="privacy-card"><div class="pc-icon">👁</div><div><div class="pc-title">100% código abierto</div><div class="pc-text">Cada línea de código está en GitHub. Verifica exactamente qué corre en tu computadora.</div></div></div>
     </div>
   </div>
 </div>
 
 <!-- CTA -->
 <div class="cta">
-  <div class="cta-blob cta-blob-1"></div>
-  <div class="cta-blob cta-blob-2"></div>
+  <div class="cta-blob cta-blob-1"></div><div class="cta-blob cta-blob-2"></div>
   <div class="cta-inner">
-    <h2>Deja de perder<br/><span>brokers en el caos.</span></h2>
-    <p>Gratis. Local. Siempre ahí.</p>
-    <a class="btn-cta" id="cta-download"
-       href="https://github.com/stajulian5/wa-copilot/releases/latest">
+    <h2>Deja de perder<br/><span>clientes en el ruido.</span></h2>
+    <p>Gratis. Local. Sin suscripción.</p>
+    <a class="btn-cta" id="cta-btn" href="https://github.com/stajulian5/wa-copilot/releases/latest">
       ⬇ Descargar WhatsApp Copilot
     </a>
-    <p class="cta-note">
-      macOS 12+ &nbsp;·&nbsp; Apple Silicon &amp; Intel &nbsp;·&nbsp;
-      <a href="https://github.com/stajulian5/wa-copilot">Código abierto ↗</a>
-    </p>
+    <p class="cta-note">macOS 12+ · Apple Silicon &amp; Intel · <a href="https://github.com/stajulian5/wa-copilot">Código abierto ↗</a></p>
   </div>
 </div>
 
 <!-- Footer -->
 <footer>
-  <div>✈️ WhatsApp Copilot — hecho con ☕ por <a href="https://github.com/stajulian5">Julian</a> para los KAMs de Mica</div>
+  <div>✈️ WhatsApp Copilot — hecho con ☕ por <a href="https://github.com/stajulian5">Julian</a></div>
   <div style="display:flex;gap:24px">
     <a href="https://github.com/stajulian5/wa-copilot">GitHub</a>
     <a href="https://github.com/stajulian5/wa-copilot/releases">Releases</a>
@@ -779,30 +809,27 @@
 
 <!-- Mobile warning -->
 <div id="mobile-warning">
-  <div class="mobile-warning-box">
+  <div class="mw-box">
     <div class="mw-icon">🖥️</div>
     <h3>Copilot es para Mac</h3>
-    <p>Esta app corre en macOS 12 o superior. Abre esta página en tu Mac para descargarla.</p>
+    <p>Esta app corre en macOS 12 o superior. Ábrela en tu Mac para descargarla.</p>
     <button class="mw-close">Entendido</button>
   </div>
 </div>
 
 <script>
-// Mobile download intercept
-document.querySelectorAll('#install-btn, #cta-download').forEach(btn => {
-  btn.addEventListener('click', e => {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    const isMac    = /Macintosh|MacIntel|MacPPC|Mac68K/i.test(navigator.userAgent);
-    if (isMobile || (!isMac && window.innerWidth < 900)) {
-      e.preventDefault();
-      document.getElementById('mobile-warning').classList.add('show');
-    }
+  ['install-btn','cta-btn'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', e => {
+      const mob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const mac = /Macintosh|MacIntel|MacPPC|Mac68K/i.test(navigator.userAgent);
+      if (mob || (!mac && window.innerWidth < 900)) {
+        e.preventDefault();
+        document.getElementById('mobile-warning').classList.add('show');
+      }
+    });
   });
-});
-document.querySelector('.mw-close').addEventListener('click', () => {
-  document.getElementById('mobile-warning').classList.remove('show');
-});
+  document.querySelector('.mw-close').addEventListener('click', () =>
+    document.getElementById('mobile-warning').classList.remove('show'));
 </script>
-
 </body>
 </html>
