@@ -13,5 +13,5 @@ mac:
   darkModeSupport: true
 publish:
   provider: github
-  owner: mica-rent
+  owner: stajulian5
   repo: wa-copilot

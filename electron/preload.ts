@@ -93,7 +93,15 @@ export const api = {
   },
 
   // Server port (for HTTP API calls from renderer)
-  serverPort
+  serverPort,
+
+  // Auto-update
+  onUpdateAvailable: (cb: (info: { version: string; url: string }) => void) => {
+    const h = (_e: any, info: { version: string; url: string }) => cb(info)
+    ipcRenderer.on('app:updateAvailable', h)
+    return () => ipcRenderer.removeListener('app:updateAvailable', h)
+  },
+  openReleasePage: (url: string) => ipcRenderer.invoke('app:openReleasePage', url)
 }
 
 contextBridge.exposeInMainWorld('api', api)

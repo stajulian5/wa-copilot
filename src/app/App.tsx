@@ -21,6 +21,7 @@ export default function App() {
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null)
+  const [updateInfo, setUpdateInfo] = useState<{ version: string; url: string } | null>(null)
 
   const { setContacts, setActiveAccountId } = useContactsStore()
   const { setReminders } = useRemindersStore()
@@ -81,12 +82,14 @@ export default function App() {
       setActiveAccountId(id)
     })
 
+    const offUpdate = window.api.onUpdateAvailable((info) => setUpdateInfo(info))
+
     const offHistory = window.api.onHistorySynced(() => {
       fetchContacts()
       setLastSyncAt(new Date())
     })
 
-    return () => { offHistory(); offQR(); offAccounts(); offActiveAccount() }
+    return () => { offUpdate(); offHistory(); offQR(); offAccounts(); offActiveAccount() }
   }, [])
 
   useWhatsApp(
@@ -162,6 +165,27 @@ export default function App() {
             setAddAccountQR(null)
           }}
         />
+      )}
+
+      {updateInfo && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-blue-600 text-white text-sm">
+          <span>✨ Nueva versión disponible: <strong>v{updateInfo.version}</strong></span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => window.api.openReleasePage(updateInfo.url)}
+              className="underline font-medium hover:text-blue-200 transition-colors"
+            >
+              Descargar
+            </button>
+            <button
+              onClick={() => setUpdateInfo(null)}
+              className="opacity-70 hover:opacity-100 transition-opacity text-lg leading-none"
+              title="Cerrar"
+            >
+              ×
+            </button>
+          </div>
+        </div>
       )}
 
       <KanbanPage

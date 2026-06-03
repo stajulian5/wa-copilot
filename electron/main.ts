@@ -131,6 +131,11 @@ app.whenReady().then(async () => {
   createWindow()
   await startBaileys(db, mainWindow!, port)
 
+  // Check for updates on launch (delayed 10 s so the app finishes booting first)
+  // then repeat every 24 hours.
+  setTimeout(checkForUpdates, 10_000)
+  setInterval(checkForUpdates, 24 * 60 * 60 * 1000)
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -155,4 +160,44 @@ ipcMain.handle('set-badge', (_e, count: number) => {
 })
 
 ipcMain.handle('get-user-data-path', () => userData)
+
+// ─── Update checker ───────────────────────────────────────────────────────────
+
+const GITHUB_REPO = 'stajulian5/wa-copilot'
+const CURRENT_VERSION = app.getVersion()          // from package.json
+
+async function checkForUpdates() {
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
+      { headers: { 'User-Agent': 'WhatsApp-Copilot-Updater' } }
+    )
+    if (!res.ok) return
+    const data = await res.json() as { tag_name?: string; html_url?: string }
+    const latest = (data.tag_name ?? '').replace(/^v/, '')
+    if (latest && isNewerVersion(latest, CURRENT_VERSION)) {
+      console.log(`[updater] new version available: ${latest} (current: ${CURRENT_VERSION})`)
+      mainWindow?.webContents.send('app:updateAvailable', {
+        version: latest,
+        url: data.html_url ?? `https://github.com/${GITHUB_REPO}/releases/latest`
+      })
+    }
+  } catch (e) {
+    // Network error — silently ignore
+  }
+}
+
+/** Returns true if `a` is strictly newer than `b` using semver-ish comparison. */
+function isNewerVersion(a: string, b: string): boolean {
+  const parse = (v: string) => v.split('.').map(n => parseInt(n, 10) || 0)
+  const [aMaj, aMin, aPat] = parse(a)
+  const [bMaj, bMin, bPat] = parse(b)
+  if (aMaj !== bMaj) return aMaj > bMaj
+  if (aMin !== bMin) return aMin > bMin
+  return aPat > bPat
+}
+
+ipcMain.handle('app:openReleasePage', (_e, url: string) => {
+  shell.openExternal(url)
+})
 

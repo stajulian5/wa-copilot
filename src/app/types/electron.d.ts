@@ -48,6 +48,10 @@ declare global {
 
       // Server port
       serverPort: number
+
+      // Auto-update
+      onUpdateAvailable: (cb: (info: { version: string; url: string }) => void) => () => void
+      openReleasePage: (url: string) => Promise<void>
     }
   }
 }
