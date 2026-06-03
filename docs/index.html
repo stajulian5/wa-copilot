@@ -659,12 +659,12 @@
     </div>
 
     <div class="hero-actions">
-      <a class="btn-primary" id="install-btn" href="https://github.com/stajulian5/wa-copilot/releases/latest">
-        ⬇ Download for macOS
+      <a class="btn-primary" id="install-btn" href="#" onclick="return startDownload()">
+        ⬇ Download for macOS — Free
       </a>
       <a class="btn-secondary" href="https://github.com/stajulian5/wa-copilot">View source ↗</a>
     </div>
-    <p class="hero-note">macOS 12+ · Apple Silicon &amp; Intel · Free forever</p>
+    <p class="hero-note">macOS 12+ · <span id="arch-hint">Apple Silicon &amp; Intel</span> · Opens a .dmg — drag to Applications</p>
   </div>
 </section>
 
@@ -1053,8 +1053,8 @@
   <div class="cta-inner">
     <h2>Take your WhatsApp<br/><span>support to the next level.</span></h2>
     <p>Free. Local. No subscription. Works with your existing WhatsApp number.</p>
-    <a class="btn-cta" id="cta-btn" href="https://github.com/stajulian5/wa-copilot/releases/latest">
-      ⬇ Download WhatsApp Copilot
+    <a class="btn-cta" id="cta-btn" href="#" onclick="return startDownload()">
+      ⬇ Download WhatsApp Copilot — Free
     </a>
     <p class="cta-note">macOS 12+ · Apple Silicon &amp; Intel · <a href="https://github.com/stajulian5/wa-copilot">Open source ↗</a></p>
   </div>
@@ -1080,16 +1080,44 @@
 </div>
 
 <script>
-  ['install-btn','cta-btn'].forEach(id => {
-    document.getElementById(id)?.addEventListener('click', e => {
-      const mob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const mac = /Macintosh|MacIntel|MacPPC|Mac68K/i.test(navigator.userAgent);
-      if (mob || (!mac && window.innerWidth < 900)) {
-        e.preventDefault();
-        document.getElementById('mobile-warning').classList.add('show');
-      }
-    });
+  const BASE = 'https://github.com/stajulian5/wa-copilot/releases/latest/download/';
+  const ARM_DMG  = BASE + 'WhatsApp.Copilot-0.2.0-arm64.dmg';
+  const INTEL_DMG = BASE + 'WhatsApp.Copilot-0.2.0.dmg';
+
+  // Detect Apple Silicon: reported as MacIntel in JS but has touch points
+  function isAppleSilicon() {
+    return /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
+  }
+  function isMac() {
+    return /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
+  }
+  function isMobile() {
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  }
+
+  // Update the arch hint text immediately on load
+  window.addEventListener('DOMContentLoaded', () => {
+    const hint = document.getElementById('arch-hint');
+    if (hint && isMac()) {
+      hint.textContent = isAppleSilicon() ? 'Apple Silicon (M1 / M2 / M3 / M4)' : 'Intel Mac';
+    }
   });
+
+  function startDownload() {
+    if (isMobile()) {
+      document.getElementById('mobile-warning').classList.add('show');
+      return false;
+    }
+    if (!isMac()) {
+      document.getElementById('mobile-warning').classList.add('show');
+      return false;
+    }
+    // Direct .dmg download — no GitHub page
+    const url = isAppleSilicon() ? ARM_DMG : INTEL_DMG;
+    window.location.href = url;
+    return false;
+  }
+
   document.querySelector('.mw-close').addEventListener('click', () =>
     document.getElementById('mobile-warning').classList.remove('show'));
 </script>
