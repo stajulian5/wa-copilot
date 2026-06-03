@@ -456,6 +456,54 @@
       footer { padding: 24px; justify-content: center; }
     }
 
+    /* ─── Who it's for ─────────────────────────────────────────────────────── */
+    .for-section {
+      max-width: 1160px; margin: 0 auto; padding: 100px 40px;
+      text-align: center;
+    }
+    .for-section h2 {
+      font-size: clamp(28px, 4vw, 44px); font-weight: 900;
+      letter-spacing: -.03em; margin-bottom: 12px;
+    }
+    .for-section .sub {
+      color: var(--muted); font-size: 17px; margin-bottom: 56px;
+    }
+    .for-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left;
+    }
+    .for-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 20px; padding: 36px 32px;
+      transition: transform .2s, box-shadow .2s; position: relative; overflow: hidden;
+    }
+    .for-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .for-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .for-card.support::before { background: linear-gradient(90deg, #25D366, #128C7E); }
+    .for-card.kam::before     { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+    .for-icon {
+      font-size: 36px; margin-bottom: 16px; display: block;
+    }
+    .for-tag {
+      display: inline-block; font-size: 10px; font-weight: 800;
+      letter-spacing: .1em; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 999px; margin-bottom: 14px;
+    }
+    .for-card.support .for-tag { background: var(--accent-light); color: var(--accent-dark); }
+    .for-card.kam .for-tag     { background: #ede9fe; color: #5b21b6; }
+    .for-card h3 { font-size: 22px; font-weight: 900; letter-spacing: -.02em; margin-bottom: 10px; }
+    .for-card > p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
+    .for-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .for-list li {
+      font-size: 13px; color: var(--ink2);
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .for-list li::before { content: '✓'; font-weight: 900; flex-shrink: 0; margin-top: 1px; }
+    .for-card.support .for-list li::before { color: var(--accent); }
+    .for-card.kam     .for-list li::before { color: #6366f1; }
+    @media (max-width: 960px) { .for-grid { grid-template-columns: 1fr; } }
+
     /* Mobile warning */
     #mobile-warning { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.6); align-items: center; justify-content: center; padding: 24px; }
     #mobile-warning.show { display: flex; }
@@ -487,13 +535,13 @@
   <div class="hero-inner">
     <div class="hero-badge">✈️ macOS · WhatsApp · Open source</div>
     <h1>
-      50 clients.<br/>
-      One <span class="wavy">WhatsApp</span>.<br/>
-      <span class="accent">Nobody slips through.</span>
+      WhatsApp is your<br/>
+      support channel.<br/>
+      <span class="accent">Treat it like one.</span>
     </h1>
     <p class="hero-tagline">
-      <strong>WhatsApp Copilot is the CRM for KAMs who live in WhatsApp.</strong><br/>
-      Visual pipeline, integrated chat, AI-powered replies — all on your Mac, no servers, no subscriptions.
+      <strong>WhatsApp Copilot turns your WhatsApp into a structured workspace.</strong><br/>
+      Visual pipeline, integrated chat, AI-powered replies — built for teams who do customer service and account management over WhatsApp.
     </p>
 
     <div class="hero-stats">
@@ -533,27 +581,66 @@
   <span class="marquee-item"><span class="marquee-dot">✦</span> Open source</span>
 </div></div>
 
+<!-- Who it's for -->
+<div class="for-section">
+  <div class="section-eyebrow">Who it's for</div>
+  <h2>Two teams. One broken workflow.<br/>One fix.</h2>
+  <p class="sub">WhatsApp Copilot works for any team that manages ongoing conversations at scale.</p>
+
+  <div class="for-grid">
+
+    <div class="for-card support">
+      <span class="for-icon">🎧</span>
+      <div class="for-tag">Customer Support</div>
+      <h3>Turn WhatsApp into a support desk.</h3>
+      <p>Clients expect answers on WhatsApp. Without structure, inbound requests pile up, response times slip, and issues fall through the cracks. Copilot gives your support team a shared view and a clear workflow.</p>
+      <ul class="for-list">
+        <li>Every inbound request becomes a card in the pipeline</li>
+        <li>Move from Open → Waiting → Resolved as you work each case</li>
+        <li>AI drafts context-aware replies to speed up resolution</li>
+        <li>No client waiting for a reply ever disappears from view</li>
+        <li>Search any past conversation in seconds with ⌘F</li>
+      </ul>
+    </div>
+
+    <div class="for-card kam">
+      <span class="for-icon">🤝</span>
+      <div class="for-tag">Account Management</div>
+      <h3>Stay on top of every client relationship.</h3>
+      <p>KAMs managing 50+ client relationships over WhatsApp have no native way to track who's active, who needs a follow-up, and who's gone quiet. Copilot gives you the pipeline view WhatsApp was never designed to provide.</p>
+      <ul class="for-list">
+        <li>Visual pipeline shows every relationship's current stage</li>
+        <li>When a client replies, their card automatically reopens</li>
+        <li>Snooze conversations and revisit them at the right moment</li>
+        <li>AI suggestions written in your voice for faster outreach</li>
+        <li>Full message history and notes on every contact</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
 <!-- Problem -->
 <div class="problem-section">
   <div class="problem-inner">
     <div class="problem-text">
       <div class="section-eyebrow" style="background:rgba(255,79,79,.1);color:#c0392b;">The problem</div>
-      <h2>WhatsApp wasn't built for client service at scale.</h2>
-      <p>As a KAM, WhatsApp is your primary channel. But it's also where you get memes, family photos, and group chats you forgot you joined. The important conversations disappear into the noise.</p>
-      <p>There's no native way to know who is waiting for a response, who is mid-process, or who you haven't contacted in weeks.</p>
+      <h2>WhatsApp is a messaging app. Not a CRM. Not a support desk.</h2>
+      <p>Whether you're handling inbound support or managing a portfolio of client relationships, WhatsApp gives you the same thing: an infinite scroll of conversations with no structure, no status, and no visibility.</p>
+      <p>The most important conversations disappear into the noise. And the people waiting for you have no idea if anyone is even looking.</p>
     </div>
     <div class="pain-cards">
       <div class="pain-card">
-        <h3>Conversations buried and forgotten</h3>
-        <p>A client asked something three days ago. You saw it, thought "I'll reply later" — and it sank to the bottom of your list. You never got back to them.</p>
+        <h3>Requests get buried</h3>
+        <p>A client sent something three days ago. You saw it, thought "I'll reply later" — it sank to the bottom of the list. They're still waiting. You don't even know.</p>
       </div>
       <div class="pain-card">
-        <h3>No pipeline visibility</h3>
-        <p>How many clients are actively in process? How many haven't heard from you in over a week? WhatsApp doesn't give you that view.</p>
+        <h3>No visibility into what's open</h3>
+        <p>How many conversations are actively waiting for a response? Which clients haven't heard from you in two weeks? WhatsApp can't answer those questions.</p>
       </div>
       <div class="pain-card">
         <h3>Replying at volume is exhausting</h3>
-        <p>When you have 50+ active conversations, every reply starts from zero. No quick context, no smart templates, no help.</p>
+        <p>When you have 50+ conversations, every reply starts from zero — no context, no history at a glance, no help. It takes twice as long as it should.</p>
       </div>
     </div>
   </div>
@@ -789,8 +876,8 @@
 <div class="cta">
   <div class="cta-blob cta-blob-1"></div><div class="cta-blob cta-blob-2"></div>
   <div class="cta-inner">
-    <h2>Stop losing clients<br/><span>to the noise.</span></h2>
-    <p>Free. Local. No subscription.</p>
+    <h2>Your clients deserve<br/><span>a real answer.</span></h2>
+    <p>Free. Local. No subscription. No setup fees.</p>
     <a class="btn-cta" id="cta-btn" href="https://github.com/stajulian5/wa-copilot/releases/latest">
       ⬇ Download WhatsApp Copilot
     </a>
