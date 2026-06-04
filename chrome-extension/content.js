@@ -17,45 +17,6 @@ function readStore(dbName, storeName) {
   })
 }
 
-// Efficient cursor-based read: only loads records newer than `sinceSeconds`.
-// Avoids pulling the entire messages store into memory (can be 50k+ records).
-// Falls back to getAll if the store has no usable timestamp index.
-function readStoreSince(dbName, storeName, sinceSeconds) {
-  return new Promise((resolve) => {
-    const req = indexedDB.open(dbName)
-    req.onerror = () => resolve([])
-    req.onsuccess = (e) => {
-      const db = e.target.result
-      if (!db.objectStoreNames.contains(storeName)) { db.close(); resolve([]); return }
-      const tx = db.transaction(storeName, 'readonly')
-      const store = tx.objectStore(storeName)
-
-      // Try to use an index on 't' (WA's Unix-seconds timestamp field) for efficiency
-      const results = []
-      let cursor
-
-      if (store.indexNames.contains('t')) {
-        // Cursor only over records with t >= sinceSeconds
-        const range = IDBKeyRange.lowerBound(sinceSeconds)
-        cursor = store.index('t').openCursor(range)
-      } else {
-        // No usable index — fall back to full scan, filter in JS
-        cursor = store.openCursor()
-      }
-
-      cursor.onsuccess = (ev) => {
-        const c = ev.target.result
-        if (!c) { db.close(); resolve(results); return }
-        const record = c.value
-        const ts = record.t ?? record.timestamp ?? record.msgTimestamp ?? 0
-        if (ts >= sinceSeconds) results.push(record)
-        c.continue()
-      }
-      cursor.onerror = () => { db.close(); resolve(results) }
-    }
-  })
-}
-
 // Normalise a phone string to digits only
 function digitsOnly(s) { return s ? String(s).replace(/\D/g, '') : null }
 
@@ -103,18 +64,13 @@ async function readWAMessages(lookbackDays = LOOKBACK_BACKGROUND_DAYS) {
   const sinceSeconds = Math.floor((Date.now() - lookbackDays * 24 * 60 * 60 * 1000) / 1000)
 
   // WA Web may use different store names across versions — try all known ones.
-  // Use cursor-based read (readStoreSince) to avoid loading the entire store.
+  // getAll() loads the full store, then we filter by timestamp in JS.
   let rows = []
   for (const store of ['messages', 'msg', 'message']) {
-    rows = await readStoreSince('model-storage', store, sinceSeconds)
-    if (rows.length > 0) break
-    // Fallback: some builds don't expose a timestamp index — try full store
-    if (rows.length === 0) {
-      const all = await readStore('model-storage', store)
-      if (all.length > 0) {
-        rows = all.filter(m => (m.t ?? m.timestamp ?? m.msgTimestamp ?? 0) >= sinceSeconds)
-        if (rows.length > 0) break
-      }
+    const all = await readStore('model-storage', store)
+    if (all.length > 0) {
+      rows = all.filter(m => (m.t ?? m.timestamp ?? m.msgTimestamp ?? 0) >= sinceSeconds)
+      if (rows.length > 0) break
     }
   }
     .map(m => {
