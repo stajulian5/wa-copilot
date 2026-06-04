@@ -1300,7 +1300,7 @@
   const ARM_DMG   = BASE + 'WA.Copilot-0.2.0-arm64.dmg';
   const INTEL_DMG = BASE + 'WA.Copilot-0.2.0.dmg';
   // Point this to your Vercel deployment once deployed:
-  const API_URL   = 'https://wa-copilot.vercel.app/api/access';
+  const API_URL   = 'https://script.google.com/macros/s/AKfycbxWZpECQg5Gp-9RPmDzsOB3SihdPLMoLi8AHT3FfqrLCuvfrDvEf7hoMDqlEpqooRrZRw/exec';
 
   // ── Device detection ──────────────────────────────────────────────────────
   const isAppleSilicon = () => /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
@@ -1347,25 +1347,27 @@
     btn.disabled = true;
     btn.textContent = 'Setting up your access…';
 
-    // Trigger download immediately — don't wait for API
+    // Generate license key client-side (Google Apps Script uses no-cors redirects
+    // so we can't read the response — the sheet still gets the row)
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const seg = n => Array.from({length:n}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+    const key = `CP-${seg(4)}-${seg(4)}-${seg(4)}`;
+
+    // Fire-and-forget to Google Sheet — no-cors because Apps Script redirects
+    fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, source: 'landing', arch: isAppleSilicon() ? 'arm64' : 'x64', key })
+    }).catch(() => {});
+
+    // Trigger download
     triggerDownload();
 
-    try {
-      const res  = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, source: 'landing' })
-      });
-      const data = await res.json();
-
-      // Show success with license key
-      document.getElementById('am-form-view').style.display   = 'none';
-      document.getElementById('am-success-view').style.display = 'block';
-      document.getElementById('am-key-display').textContent    = data.key ?? '—';
-    } catch (e) {
-      // API unavailable — download already started, just close the modal
-      closeModal();
-    }
+    // Show success with the generated key
+    document.getElementById('am-form-view').style.display    = 'none';
+    document.getElementById('am-success-view').style.display = 'block';
+    document.getElementById('am-key-display').textContent    = key;
   }
 
   function copyKey() {
