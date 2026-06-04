@@ -65,7 +65,7 @@ export function NavBar({
       {/* Traffic lights space */}
       <div className="w-16 title-bar-drag" />
 
-      <span className="font-semibold text-gray-900 text-sm title-bar-no-drag">✈️ Copilot</span>
+      <span className="font-semibold text-gray-900 text-sm title-bar-no-drag">✈️ WA Copilot</span>
 
       {/* Search */}
       <div className="title-bar-no-drag flex-1 max-w-xs">

@@ -118,7 +118,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
       <div className="w-full space-y-2.5">
         {[
           { icon: '📋', title: 'Pipeline de brokers', desc: 'Organiza tus conversaciones de WhatsApp en un tablero visual.' },
-          { icon: '💬', title: 'Chat integrado',       desc: 'Lee y responde mensajes sin salir del Copilot.' },
+          { icon: '💬', title: 'Chat integrado',       desc: 'Lee y responde mensajes sin salir del WA Copilot.' },
           { icon: '✨', title: 'Respuestas con IA',    desc: 'Sugerencias automáticas de respuesta — tú decides si enviarlas.' },
         ].map(f => (
           <div key={f.title} className="flex gap-3 p-3.5 rounded-2xl bg-gray-50 text-left">
@@ -259,7 +259,7 @@ function ExtensionStep({ extensionPath, onDone }: { extensionPath: string; onDon
           <h2 className="text-xl font-bold text-gray-900">Un último paso</h2>
           <p className="text-gray-500 text-sm mt-1 leading-relaxed">
             La extensión de Chrome hace que los <strong className="text-gray-700">nombres de tus brokers</strong> aparezcan
-            en el Copilot. Solo lo haces una vez.
+            en el WA Copilot. Solo lo haces una vez.
           </p>
         </div>
       </div>
@@ -341,7 +341,7 @@ function ExtensionStep({ extensionPath, onDone }: { extensionPath: string; onDon
             <p className="text-xs text-gray-500 mt-0.5">
               Abre <strong>web.whatsapp.com</strong> en Chrome, haz clic en
               el ícono 🧩 de la extensión y presiona <strong>"Sincronizar contactos"</strong>.
-              Los nombres aparecerán en Copilot en segundos.
+              Los nombres aparecerán en WA Copilot en segundos.
             </p>
           </div>
         </div>
