@@ -511,6 +511,38 @@
       footer { padding: 24px; justify-content: center; }
     }
 
+    /* ─── Quick features grid ───────────────────────────────────────────────── */
+    .quick-features {
+      max-width: 1160px; margin: 0 auto; padding: 80px 40px 60px;
+    }
+    .quick-features h2 {
+      font-size: clamp(26px, 3.5vw, 38px); font-weight: 900;
+      letter-spacing: -.03em; margin-bottom: 8px;
+    }
+    .quick-features .sub { color: var(--muted); font-size: 16px; margin-bottom: 48px; }
+    .qf-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    .qf-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px 18px;
+      text-decoration: none; color: inherit;
+      transition: transform .18s, box-shadow .18s, border-color .18s;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .qf-card:hover {
+      transform: translateY(-3px); box-shadow: var(--shadow-lg);
+      border-color: var(--accent);
+    }
+    .qf-icon { font-size: 24px; }
+    .qf-card h3 { font-size: 13px; font-weight: 800; color: var(--ink); letter-spacing: -.01em; }
+    .qf-card p  { font-size: 12px; color: var(--muted); line-height: 1.5; flex: 1; }
+    .qf-link { font-size: 11px; font-weight: 700; color: var(--accent-text); letter-spacing: .02em; }
+    .qf-card.highlight { border-color: var(--accent-light); background: var(--accent-light); }
+    .qf-card.highlight h3 { color: var(--accent-text); }
+    @media (max-width: 960px) { .qf-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 540px) { .qf-grid { grid-template-columns: 1fr; } }
+
     /* ─── Who it's for ─────────────────────────────────────────────────────── */
     .for-section {
       max-width: 1160px; margin: 0 auto; padding: 100px 40px;
@@ -653,7 +685,7 @@
     <a href="#ai">AI replies</a>
     <a href="#setup">Setup</a>
   </div>
-  <a class="nav-btn" href="https://github.com/stajulian5/wa-copilot/releases/latest">
+  <a class="nav-btn" href="#" onclick="return startDownload()">
     Download free
   </a>
 </nav>
@@ -755,6 +787,73 @@
       <div class="stat-num">3<span>×</span></div>
       <div class="stat-label">More throughput with a structured workflow</div>
     </div>
+  </div>
+</div>
+
+<!-- Quick features grid -->
+<div class="quick-features" id="features">
+  <div class="section-eyebrow">Everything included</div>
+  <h2>One tool. Every feature your team needs.</h2>
+  <p class="sub">Click any feature to see it in detail below.</p>
+
+  <div class="qf-grid">
+
+    <a class="qf-card" href="#pipeline">
+      <div class="qf-icon">📋</div>
+      <h3>Visual pipeline</h3>
+      <p>Every conversation in a column — New, Active, Waiting, Resolved. Drag to move.</p>
+      <span class="qf-link">See pipeline →</span>
+    </a>
+
+    <a class="qf-card" href="#ai">
+      <div class="qf-icon">✨</div>
+      <h3>AI-powered replies</h3>
+      <p>Claude reads the full thread and drafts a reply. ⌘↵ to send instantly.</p>
+      <span class="qf-link">See AI replies →</span>
+    </a>
+
+    <a class="qf-card highlight" href="#escalate">
+      <div class="qf-icon">⚡</div>
+      <h3>Manager escalation</h3>
+      <p>Loop in a manager or colleague instantly — full context, no copy-paste.</p>
+      <span class="qf-link">See escalation →</span>
+    </a>
+
+    <a class="qf-card" href="#continuity">
+      <div class="qf-icon">🔁</div>
+      <h3>Auto-reopen</h3>
+      <p>When a resolved client writes back, their card moves to New automatically.</p>
+      <span class="qf-link">See continuity →</span>
+    </a>
+
+    <a class="qf-card highlight" href="#escalate">
+      <div class="qf-icon">👁</div>
+      <h3>Manager supervision</h3>
+      <p>Managers see every open case, response time, and team workload in real time.</p>
+      <span class="qf-link">See escalation →</span>
+    </a>
+
+    <a class="qf-card" href="#chrome">
+      <div class="qf-icon">🧩</div>
+      <h3>Chrome extension</h3>
+      <p>Open WhatsApp Web in Chrome alongside Copilot — names sync automatically.</p>
+      <span class="qf-link">See extension →</span>
+    </a>
+
+    <a class="qf-card" href="#pipeline">
+      <div class="qf-icon">📎</div>
+      <h3>Send files &amp; images</h3>
+      <p>Attach PDFs, photos, and documents directly from the chat panel.</p>
+      <span class="qf-link">See pipeline →</span>
+    </a>
+
+    <a class="qf-card" href="#setup">
+      <div class="qf-icon">🔔</div>
+      <h3>Snooze &amp; reminders</h3>
+      <p>Defer a conversation and it resurfaces at exactly the right moment.</p>
+      <span class="qf-link">See setup →</span>
+    </a>
+
   </div>
 </div>
 
@@ -931,7 +1030,7 @@
 
 <!-- ── Feature 3: Never miss anyone ── -->
 <hr class="showcase-divider" />
-<div class="showcase">
+<div class="showcase" id="continuity">
   <div class="showcase-text">
     <div class="eyebrow">Continuity of service</div>
     <h2>No client ever falls through the cracks.</h2>
@@ -1025,6 +1124,50 @@
         <div class="me-avatar-sm" style="background:#166534;">A</div>
         <div class="me-avatar-sm" style="background:#6366f1;">J</div>
         <div class="me-members-label">Ana + Julian now handling this conversation</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Feature 5: Chrome extension ── -->
+<hr class="showcase-divider" />
+<div class="showcase" id="chrome">
+  <div class="showcase-text">
+    <div class="eyebrow">Chrome extension</div>
+    <h2>WhatsApp Web and Copilot, side by side.</h2>
+    <p>Open WhatsApp Web in Chrome alongside Copilot. The extension reads your contact names and syncs them into the pipeline — so every card shows a real name instead of a phone number.</p>
+    <ul>
+      <li>Works with your existing WhatsApp Web session in Chrome</li>
+      <li>One-click sync: names appear in Copilot within seconds</li>
+      <li>No re-login, no permissions — reads what's already on screen</li>
+      <li>Installs in under 2 minutes — included with Copilot</li>
+    </ul>
+  </div>
+  <div>
+    <div class="mock-chat" style="max-width:360px;">
+      <div class="mc-header" style="background:#075E54;">
+        <span style="font-size:11px;font-weight:700;color:#fff;letter-spacing:.05em;">🧩 MICA CRM SYNC</span>
+        <span style="flex:1"></span>
+        <span style="font-size:10px;color:rgba(255,255,255,.7);">WhatsApp Web</span>
+      </div>
+      <div style="padding:16px;background:#f9f8f5;">
+        <div style="background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:14px 16px;margin-bottom:10px;">
+          <div style="font-size:11px;font-weight:800;color:#888;letter-spacing:.06em;margin-bottom:8px;">BEFORE SYNC</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="font-size:12px;color:#111;">+52 155 1234 5678</div>
+            <div style="font-size:12px;color:#111;">+52 155 9876 5432</div>
+            <div style="font-size:12px;color:#111;">+57 312 8467 595</div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:18px;margin:4px 0;">↓</div>
+        <div style="background:#fff;border:1px solid var(--accent-light);border-radius:12px;padding:14px 16px;">
+          <div style="font-size:11px;font-weight:800;color:var(--accent-text);letter-spacing:.06em;margin-bottom:8px;">✓ AFTER SYNC</div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="font-size:12px;color:#111;font-weight:600;">Sarah Mitchell</div>
+            <div style="font-size:12px;color:#111;font-weight:600;">Carlos Vázquez</div>
+            <div style="font-size:12px;color:#111;font-weight:600;">Juliana Gomez</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
