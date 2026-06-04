@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useContactsStore } from '../stores/contactsStore'
 import type { Account } from '../../server/db/schema'
+
+const PORT = () => window.api?.serverPort ?? 3847
 
 interface Props {
   waStatus: 'disconnected' | 'connecting' | 'connected'
@@ -23,16 +25,44 @@ export function NavBar({
   waStatus, searchRef, onOpenSettings,
   accounts, activeAccountId, onSwitchAccount, onAddAccount, lastSyncAt
 }: Props) {
-  const { setSearchQuery, searchQuery, contacts } = useContactsStore()
+  const { setSearchQuery, searchQuery, contacts, setContacts } = useContactsStore()
   const status = statusConfig[waStatus]
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   const [, forceUpdate] = useState(0)
+  const [syncing, setSyncing] = useState(false)
+  const [extensionActive, setExtensionActive] = useState(false)
 
   // Re-render every 30 s so the relative time stays fresh
   useEffect(() => {
     const t = setInterval(() => forceUpdate(n => n + 1), 30_000)
     return () => clearInterval(t)
   }, [])
+
+  // Poll extension status every 30 s
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const r = await fetch(`http://127.0.0.1:${PORT()}/status`)
+        const d = await r.json()
+        setExtensionActive(!!d.extensionActive)
+      } catch { setExtensionActive(false) }
+    }
+    check()
+    const t = setInterval(check, 30_000)
+    return () => clearInterval(t)
+  }, [])
+
+  // Force sync: resync WA app state + re-fetch contacts
+  const handleForceSync = useCallback(async () => {
+    if (syncing) return
+    setSyncing(true)
+    try {
+      await window.api.forceSync()
+      const all = await fetch(`http://127.0.0.1:${PORT()}/contacts`).then(r => r.json())
+      setContacts(all)
+    } catch {}
+    setTimeout(() => setSyncing(false), 1500)
+  }, [syncing])
 
   const activeAccount = accounts.find(a => a.id === activeAccountId)
 
@@ -81,24 +111,47 @@ export function NavBar({
 
       <div className="flex-1" />
 
-      {/* WA Status + last sync */}
-      <div className="title-bar-no-drag flex items-center gap-1.5">
-        <div className={`w-2 h-2 rounded-full ${status.dot}`} />
-        <span className="text-xs text-gray-500">{status.label}</span>
+      {/* ── Control point 1: WhatsApp Direct connection ── */}
+      <div className="title-bar-no-drag flex items-center gap-1.5" title="Conexión directa a WhatsApp vía QR">
+        <div className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+        <span className="text-[11px] text-gray-500 font-medium">WA</span>
+        <span className="text-[11px] text-gray-400">{status.label}</span>
         {waStatus === 'disconnected' && (
-          <button
-            onClick={() => window.api.getWAStatus()}
-            className="ml-1 text-xs text-blue-600 hover:underline"
-          >
+          <button onClick={() => window.api.getWAStatus()} className="text-[11px] text-blue-500 hover:underline ml-0.5">
             Reconectar
           </button>
         )}
         {lastSyncAt && (
-          <span className="text-[10px] text-gray-400 ml-0.5">
-            · {formatRelative(lastSyncAt)}
-          </span>
+          <span className="text-[10px] text-gray-300 ml-0.5">· {formatRelative(lastSyncAt)}</span>
         )}
       </div>
+
+      {/* Divider */}
+      <div className="title-bar-no-drag w-px h-4 bg-gray-200" />
+
+      {/* ── Control point 2: Chrome Extension status ── */}
+      <div className="title-bar-no-drag flex items-center gap-1.5" title="Extensión de Chrome — sincroniza nombres desde WhatsApp Web">
+        <div className={`w-1.5 h-1.5 rounded-full ${extensionActive ? 'bg-green-500' : 'bg-gray-300'}`} />
+        <span className="text-[11px] text-gray-500 font-medium">Ext</span>
+        <span className="text-[11px] text-gray-400">{extensionActive ? 'Activa' : 'Inactiva'}</span>
+      </div>
+
+      {/* ── Force sync button ── */}
+      <button
+        onClick={handleForceSync}
+        disabled={syncing}
+        title="Forzar sincronización ⌘R"
+        className="title-bar-no-drag p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40"
+      >
+        <svg
+          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round"
+          className={syncing ? 'animate-spin' : ''}
+        >
+          <path d="M21 12a9 9 0 01-9 9M3 12a9 9 0 019-9M21 12c0-1.3-.28-2.54-.77-3.66M3 12c0 1.3.28 2.54.77 3.66"/>
+          <path d="M17 3.34A9 9 0 0121 12M7 20.66A9 9 0 013 12"/>
+        </svg>
+      </button>
 
       {/* Account switcher pill — always visible; shows "…" while accounts load */}
       <div className="title-bar-no-drag relative">

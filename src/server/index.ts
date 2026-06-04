@@ -45,6 +45,21 @@ export async function startServer(db: BetterSQLite3Database<typeof schema>, user
     }
   })
 
+  // Extension heartbeat — Chrome extension POSTs here to signal it's active
+  // GET  /status → renderer polls this to know if extension is connected
+  let lastExtensionPing = 0
+  app.post('/extension/ping', (_req, res) => {
+    lastExtensionPing = Date.now()
+    res.json({ ok: true })
+  })
+  app.get('/status', (_req, res) => {
+    const extensionSeenMs = lastExtensionPing ? Date.now() - lastExtensionPing : null
+    res.json({
+      extensionActive: extensionSeenMs !== null && extensionSeenMs < 60_000,
+      extensionLastSeen: lastExtensionPing || null
+    })
+  })
+
   app.use('/contacts', contactsRouter)
   app.use('/messages', messagesRouter)
   app.use('/ai', aiRouter)

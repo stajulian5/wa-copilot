@@ -60,6 +60,9 @@ declare global {
 
       // File picker
       pickFile: () => Promise<string | null>
+
+      // Force sync
+      forceSync: () => Promise<void>
     }
   }
 }

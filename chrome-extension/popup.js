@@ -186,3 +186,16 @@ btn.addEventListener('click', async () => {
 
   btn.disabled = false
 })
+
+// Heartbeat — tell WA Copilot this extension is active
+;(async function pingCopilot() {
+  try {
+    const ports = [3847, 3848, 3849]
+    for (const port of ports) {
+      try {
+        await fetch(`http://127.0.0.1:${port}/extension/ping`, { method: 'POST' })
+        break
+      } catch {}
+    }
+  } catch {}
+})()

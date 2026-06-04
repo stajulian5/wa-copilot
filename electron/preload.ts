@@ -109,7 +109,10 @@ export const api = {
   openChromeExtensions: () => ipcRenderer.invoke('app:openChromeExtensions'),
 
   // File picker (#4 send media)
-  pickFile: (): Promise<string | null> => ipcRenderer.invoke('app:pickFile')
+  pickFile: (): Promise<string | null> => ipcRenderer.invoke('app:pickFile'),
+
+  // Force sync — triggers resyncAppState + catch-up history fetch
+  forceSync: () => ipcRenderer.invoke('wa:resyncContacts')
 }
 
 contextBridge.exposeInMainWorld('api', api)
