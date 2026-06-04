@@ -476,8 +476,6 @@
     }
     .am-submit:hover { background: var(--accent-hover); transform: translateY(-1px); }
     .am-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
-    .am-skip { margin-top: 8px; font-size: 12px; color: var(--muted); cursor: pointer; background: none; border: none; text-decoration: underline; }
-    .am-skip:hover { color: var(--ink); }
     .am-success { display: none; }
     .am-success.show { display: block; }
     .am-key-box {
@@ -1270,7 +1268,6 @@
       <div class="am-form">
         <input class="am-input" id="am-email" type="email" placeholder="you@company.com" autocomplete="email" />
         <button class="am-submit" id="am-submit-btn" onclick="submitAccess()">Get free access &amp; download →</button>
-        <button class="am-skip" onclick="skipAndDownload()">Skip — just download</button>
       </div>
       <p id="am-error" style="color:#dc2626;font-size:12px;margin-top:8px;display:none;"></p>
     </div>
@@ -1377,11 +1374,6 @@
       document.getElementById('am-key-display').textContent = '✓ Copied!';
       setTimeout(() => { document.getElementById('am-key-display').textContent = key; }, 1500);
     });
-  }
-
-  function skipAndDownload() {
-    closeModal();
-    triggerDownload();
   }
 
   function closeModal() {
