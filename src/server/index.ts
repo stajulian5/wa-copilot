@@ -45,18 +45,35 @@ export async function startServer(db: BetterSQLite3Database<typeof schema>, user
     }
   })
 
-  // Extension heartbeat — Chrome extension POSTs here to signal it's active
-  // GET  /status → renderer polls this to know if extension is connected
+  // Extension heartbeat — Chrome extension POSTs here on every auto-sync cycle
+  // Sync interval: 2 minutes. Grace window: 10 seconds.
+  // GET /status returns three-state health so the NavBar can show green/amber/gray.
+  const EXT_SYNC_INTERVAL_MS = 2 * 60 * 1000        // expected ping every 2 min
+  const EXT_GRACE_MS         = 10 * 1000             // 10 s grace = alert at 2m10s
+  const EXT_TIMEOUT_MS       = EXT_SYNC_INTERVAL_MS + EXT_GRACE_MS
+
   let lastExtensionPing = 0
   app.post('/extension/ping', (_req, res) => {
     lastExtensionPing = Date.now()
     res.json({ ok: true })
   })
   app.get('/status', (_req, res) => {
-    const extensionSeenMs = lastExtensionPing ? Date.now() - lastExtensionPing : null
+    const now = Date.now()
+    const elapsed = lastExtensionPing ? now - lastExtensionPing : null
+
+    // 'green'  — seen within the expected sync window (≤ 2m10s)
+    // 'amber'  — missed one cycle but seen recently (≤ 5 min)
+    // 'gray'   — never seen, or timed out (> 5 min)
+    let extStatus: 'green' | 'amber' | 'gray' = 'gray'
+    if (elapsed !== null) {
+      if (elapsed <= EXT_TIMEOUT_MS)       extStatus = 'green'
+      else if (elapsed <= 5 * 60 * 1000)  extStatus = 'amber'
+    }
+
     res.json({
-      extensionActive: extensionSeenMs !== null && extensionSeenMs < 60_000,
-      extensionLastSeen: lastExtensionPing || null
+      extensionStatus:  extStatus,
+      extensionLastSeen: lastExtensionPing || null,
+      extensionElapsedMs: elapsed
     })
   })
 

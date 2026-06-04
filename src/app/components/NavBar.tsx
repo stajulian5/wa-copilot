@@ -30,25 +30,30 @@ export function NavBar({
   const [showAccountMenu, setShowAccountMenu] = useState(false)
   const [, forceUpdate] = useState(0)
   const [syncing, setSyncing] = useState(false)
-  const [extensionActive, setExtensionActive] = useState(false)
+  const [extStatus, setExtStatus] = useState<'green' | 'amber' | 'gray'>('gray')
+  const [extLastSeen, setExtLastSeen] = useState<number | null>(null)
 
-  // Re-render every 30 s so the relative time stays fresh
+  // Re-render every 15 s — tight enough to catch the amber transition promptly
   useEffect(() => {
-    const t = setInterval(() => forceUpdate(n => n + 1), 30_000)
+    const t = setInterval(() => forceUpdate(n => n + 1), 15_000)
     return () => clearInterval(t)
   }, [])
 
-  // Poll extension status every 30 s
+  // Poll extension status every 15 s (server returns pre-computed green/amber/gray)
   useEffect(() => {
     const check = async () => {
       try {
         const r = await fetch(`http://127.0.0.1:${PORT()}/status`)
         const d = await r.json()
-        setExtensionActive(!!d.extensionActive)
-      } catch { setExtensionActive(false) }
+        setExtStatus(d.extensionStatus ?? 'gray')
+        setExtLastSeen(d.extensionLastSeen ?? null)
+      } catch {
+        setExtStatus('gray')
+        setExtLastSeen(null)
+      }
     }
     check()
-    const t = setInterval(check, 30_000)
+    const t = setInterval(check, 15_000)
     return () => clearInterval(t)
   }, [])
 
@@ -130,10 +135,30 @@ export function NavBar({
       <div className="title-bar-no-drag w-px h-4 bg-gray-200" />
 
       {/* ── Control point 2: Chrome Extension status ── */}
-      <div className="title-bar-no-drag flex items-center gap-1.5" title="Extensión de Chrome — sincroniza nombres desde WhatsApp Web">
-        <div className={`w-1.5 h-1.5 rounded-full ${extensionActive ? 'bg-green-500' : 'bg-gray-300'}`} />
+      <div
+        className="title-bar-no-drag flex items-center gap-1.5"
+        title={
+          extStatus === 'green' ? 'Extensión activa — sincronizando cada 2 min' :
+          extStatus === 'amber' ? 'Extensión tardando — último sync hace más de 2m10s. ¿Está WhatsApp Web abierto en Chrome?' :
+          extLastSeen ? `Extensión inactiva — último sync ${formatRelative(new Date(extLastSeen))}` :
+          'Extensión no detectada — instalá la extensión o abrí WhatsApp Web en Chrome'
+        }
+      >
+        <div className={`w-1.5 h-1.5 rounded-full transition-colors ${
+          extStatus === 'green' ? 'bg-green-500' :
+          extStatus === 'amber' ? 'bg-amber-400 animate-pulse' :
+          'bg-gray-300'
+        }`} />
         <span className="text-[11px] text-gray-500 font-medium">Ext</span>
-        <span className="text-[11px] text-gray-400">{extensionActive ? 'Activa' : 'Inactiva'}</span>
+        <span className={`text-[11px] ${
+          extStatus === 'green' ? 'text-gray-400' :
+          extStatus === 'amber' ? 'text-amber-500 font-semibold' :
+          'text-gray-400'
+        }`}>
+          {extStatus === 'green' ? 'Sincronizando' :
+           extStatus === 'amber' ? 'Tardando' :
+           'Inactiva'}
+        </span>
       </div>
 
       {/* ── Force sync button ── */}
