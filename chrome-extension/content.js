@@ -1,10 +1,11 @@
 // Mica CRM — WhatsApp Web contact sync
 // Reads from WA Web's IndexedDB and POSTs names/phones to the local CRM server.
 
+// Generic full-store read (used for contacts — small dataset, getAll is fine)
 function readStore(dbName, storeName) {
   return new Promise((resolve) => {
     const req = indexedDB.open(dbName)
-    req.onerror = () => resolve([])   // soft-fail: missing DB is non-fatal
+    req.onerror = () => resolve([])
     req.onsuccess = (e) => {
       const db = e.target.result
       if (!db.objectStoreNames.contains(storeName)) { db.close(); resolve([]); return }
@@ -12,6 +13,45 @@ function readStore(dbName, storeName) {
       const getAll = tx.objectStore(storeName).getAll()
       getAll.onsuccess = () => { db.close(); resolve(getAll.result) }
       getAll.onerror = () => { db.close(); resolve([]) }
+    }
+  })
+}
+
+// Efficient cursor-based read: only loads records newer than `sinceSeconds`.
+// Avoids pulling the entire messages store into memory (can be 50k+ records).
+// Falls back to getAll if the store has no usable timestamp index.
+function readStoreSince(dbName, storeName, sinceSeconds) {
+  return new Promise((resolve) => {
+    const req = indexedDB.open(dbName)
+    req.onerror = () => resolve([])
+    req.onsuccess = (e) => {
+      const db = e.target.result
+      if (!db.objectStoreNames.contains(storeName)) { db.close(); resolve([]); return }
+      const tx = db.transaction(storeName, 'readonly')
+      const store = tx.objectStore(storeName)
+
+      // Try to use an index on 't' (WA's Unix-seconds timestamp field) for efficiency
+      const results = []
+      let cursor
+
+      if (store.indexNames.contains('t')) {
+        // Cursor only over records with t >= sinceSeconds
+        const range = IDBKeyRange.lowerBound(sinceSeconds)
+        cursor = store.index('t').openCursor(range)
+      } else {
+        // No usable index — fall back to full scan, filter in JS
+        cursor = store.openCursor()
+      }
+
+      cursor.onsuccess = (ev) => {
+        const c = ev.target.result
+        if (!c) { db.close(); resolve(results); return }
+        const record = c.value
+        const ts = record.t ?? record.timestamp ?? record.msgTimestamp ?? 0
+        if (ts >= sinceSeconds) results.push(record)
+        c.continue()
+      }
+      cursor.onerror = () => { db.close(); resolve(results) }
     }
   })
 }
@@ -53,21 +93,30 @@ async function readWAContacts() {
 // WhatsApp Web caches messages in 'model-storage' → 'messages' store.
 // We read the last 72 hours and POST to WA Copilot for deduplication & storage.
 
-async function readWAMessages() {
-  const TWO_DAYS_AGO = Math.floor((Date.now() - 72 * 60 * 60 * 1000) / 1000)  // WA uses seconds
+// How far back to look for messages.
+// Background auto-sync (every 2 min): only needs a short window to catch stragglers.
+// Manual / first-run sync: wider window to recover more history.
+const LOOKBACK_BACKGROUND_DAYS = 7    // 7 days for routine background syncs
+const LOOKBACK_MANUAL_DAYS     = 30   // 30 days when triggered from popup / force sync
 
-  // WA Web may use different store names across versions — try all known ones
+async function readWAMessages(lookbackDays = LOOKBACK_BACKGROUND_DAYS) {
+  const sinceSeconds = Math.floor((Date.now() - lookbackDays * 24 * 60 * 60 * 1000) / 1000)
+
+  // WA Web may use different store names across versions — try all known ones.
+  // Use cursor-based read (readStoreSince) to avoid loading the entire store.
   let rows = []
   for (const store of ['messages', 'msg', 'message']) {
-    rows = await readStore('model-storage', store)
+    rows = await readStoreSince('model-storage', store, sinceSeconds)
     if (rows.length > 0) break
+    // Fallback: some builds don't expose a timestamp index — try full store
+    if (rows.length === 0) {
+      const all = await readStore('model-storage', store)
+      if (all.length > 0) {
+        rows = all.filter(m => (m.t ?? m.timestamp ?? m.msgTimestamp ?? 0) >= sinceSeconds)
+        if (rows.length > 0) break
+      }
+    }
   }
-
-  return rows
-    .filter(m => {
-      const ts = m.t ?? m.timestamp ?? m.msgTimestamp ?? 0
-      return ts > TWO_DAYS_AGO
-    })
     .map(m => {
       const id = m.id?._serialized ?? m.id ?? m.key?.id ?? null
       const jid = m.id?.remote ?? m.chatId ?? m.key?.remoteJid ?? null
@@ -89,9 +138,11 @@ async function readWAMessages() {
     .filter(Boolean)
 }
 
-async function postMessagesToServer(port) {
+// lookbackDays: pass LOOKBACK_BACKGROUND_DAYS for routine sync,
+//               LOOKBACK_MANUAL_DAYS for popup / force sync
+async function postMessagesToServer(port, lookbackDays = LOOKBACK_BACKGROUND_DAYS) {
   try {
-    const messages = await readWAMessages()
+    const messages = await readWAMessages(lookbackDays)
     if (messages.length === 0) return { synced: 0 }
 
     const res = await fetch(`http://127.0.0.1:${port}/messages/sync`, {
@@ -100,7 +151,7 @@ async function postMessagesToServer(port) {
       body: JSON.stringify(messages)
     })
     const data = await res.json()
-    console.log(`[WA Copilot] message sync: ${data.saved} new, ${data.skipped} already known`)
+    console.log(`[WA Copilot] message sync (${lookbackDays}d): ${data.saved} new, ${data.skipped} already known`)
     return { synced: data.saved }
   } catch (err) {
     console.warn('[WA Copilot] message sync failed:', err.message)
@@ -144,10 +195,11 @@ findCopilotPort().then(port => {
 // ── Message listener from popup ───────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.action === 'syncMessages') {
+    // Popup-triggered sync uses the wider 30-day window for deeper recovery
     ;(async () => {
       const port = await findCopilotPort()
       if (!port) { sendResponse({ ok: false, message: 'WA Copilot not running' }); return }
-      const result = await postMessagesToServer(port)
+      const result = await postMessagesToServer(port, LOOKBACK_MANUAL_DAYS)
       sendResponse({ ok: true, synced: result.synced })
     })()
     return true
