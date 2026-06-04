@@ -49,7 +49,110 @@ async function readWAContacts() {
   return { contacts, lidNames, lidPns }
 }
 
+// ── Message sync: read from WA Web's IndexedDB ───────────────────────────────
+// WhatsApp Web caches messages in 'model-storage' → 'messages' store.
+// We read the last 72 hours and POST to WA Copilot for deduplication & storage.
+
+async function readWAMessages() {
+  const TWO_DAYS_AGO = Math.floor((Date.now() - 72 * 60 * 60 * 1000) / 1000)  // WA uses seconds
+
+  // WA Web may use different store names across versions — try all known ones
+  let rows = []
+  for (const store of ['messages', 'msg', 'message']) {
+    rows = await readStore('model-storage', store)
+    if (rows.length > 0) break
+  }
+
+  return rows
+    .filter(m => {
+      const ts = m.t ?? m.timestamp ?? m.msgTimestamp ?? 0
+      return ts > TWO_DAYS_AGO
+    })
+    .map(m => {
+      const id = m.id?._serialized ?? m.id ?? m.key?.id ?? null
+      const jid = m.id?.remote ?? m.chatId ?? m.key?.remoteJid ?? null
+      if (!id || !jid) return null
+
+      const ts = (m.t ?? m.timestamp ?? m.msgTimestamp ?? 0) * 1000
+      const body = m.body ?? m.caption ?? m.text ?? null
+      const fromMe = m.id?.fromMe ?? m.fromMe ?? false
+      const type = m.type ?? 'chat'
+      const isGroup = jid.endsWith('@g.us')
+      const pushName = m.notifyName ?? m.pushName ?? m.senderName ?? null
+
+      // Skip protocol/system messages
+      if (['protocol', 'notification', 'notification_template', 'e2e_notification',
+           'gp2', 'broadcast', 'call_log'].includes(type)) return null
+
+      return { id, jid, body, timestamp: ts, fromMe, type, pushName, isGroup }
+    })
+    .filter(Boolean)
+}
+
+async function postMessagesToServer(port) {
+  try {
+    const messages = await readWAMessages()
+    if (messages.length === 0) return { synced: 0 }
+
+    const res = await fetch(`http://127.0.0.1:${port}/messages/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(messages)
+    })
+    const data = await res.json()
+    console.log(`[WA Copilot] message sync: ${data.saved} new, ${data.skipped} already known`)
+    return { synced: data.saved }
+  } catch (err) {
+    console.warn('[WA Copilot] message sync failed:', err.message)
+    return { synced: 0 }
+  }
+}
+
+// ── Background auto-sync every 2 minutes ─────────────────────────────────────
+// Runs silently while WhatsApp Web tab is open. Ensures any message that
+// Baileys missed (zombie gap, offline batch overflow) gets captured via
+// this backup channel.
+let _syncPort = 3847
+let _syncInterval = null
+
+async function findCopilotPort() {
+  for (const port of [3847, 3848, 3849, 3850]) {
+    try {
+      const r = await fetch(`http://127.0.0.1:${port}/status`)
+      if (r.ok) { _syncPort = port; return port }
+    } catch {}
+  }
+  return null
+}
+
+async function runBackgroundSync() {
+  const port = await findCopilotPort()
+  if (!port) return   // WA Copilot not running — skip silently
+  // Heartbeat
+  fetch(`http://127.0.0.1:${port}/extension/ping`, { method: 'POST' }).catch(() => {})
+  // Message sync
+  await postMessagesToServer(port)
+}
+
+// Start background sync
+findCopilotPort().then(port => {
+  if (!port) return
+  runBackgroundSync()
+  _syncInterval = setInterval(runBackgroundSync, 2 * 60 * 1000)  // every 2 min
+})
+
+// ── Message listener from popup ───────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg.action === 'syncMessages') {
+    ;(async () => {
+      const port = await findCopilotPort()
+      if (!port) { sendResponse({ ok: false, message: 'WA Copilot not running' }); return }
+      const result = await postMessagesToServer(port)
+      sendResponse({ ok: true, synced: result.synced })
+    })()
+    return true
+  }
+
   if (msg.action !== 'sync') return
 
   ;(async () => {

@@ -177,8 +177,20 @@ btn.addEventListener('click', async () => {
       return
     }
 
-    status.className = 'ok'
-    status.textContent = `✓ ${data.updated} contactos actualizados de ${result.payload.length} encontrados`
+    // Also sync messages in the background
+    status.textContent = `✓ ${data.updated} contactos · sincronizando mensajes…`
+
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+      if (!tabs[0]?.id) return
+      chrome.tabs.sendMessage(tabs[0].id, { action: 'syncMessages' }, (msgRes) => {
+        if (chrome.runtime.lastError) return
+        if (msgRes?.synced > 0) {
+          status.textContent = `✓ ${data.updated} contactos · ${msgRes.synced} mensajes nuevos sincronizados`
+        } else {
+          status.textContent = `✓ ${data.updated} contactos actualizados · mensajes al día`
+        }
+      })
+    })
   } catch (err) {
     status.className = 'err'
     status.textContent = err.message
