@@ -353,7 +353,7 @@ async function connectSession(
       keys: makeCacheableSignalKeyStore(state.keys, console as any)
     },
     printQRInTerminal: false,
-    browser: ['WhatsApp Copilot', 'Chrome', '1.0.0'],
+    browser: ['WA Copilot', 'Chrome', '1.0.0'],
     markOnlineOnConnect: false,
     syncFullHistory: true,
     // Required for Baileys to re-decrypt messages during history sync

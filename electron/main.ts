@@ -1,8 +1,16 @@
 import { app, BrowserWindow, ipcMain, Notification, nativeTheme, Menu, shell, dialog } from 'electron'
 
-app.setName('WhatsApp Copilot')
-// Pin userData to a stable path so re-naming the app never loses data
-app.setPath('userData', app.getPath('appData') + '/WhatsApp Copilot')
+app.setName('WA Copilot')
+// Pin userData to stable path. Migrate from old 'WhatsApp Copilot' folder if needed.
+const oldUserData = app.getPath('appData') + '/WhatsApp Copilot'
+const newUserData = app.getPath('appData') + '/WA Copilot'
+try {
+  const { existsSync: _exists, renameSync: _rename } = require('fs')
+  if (_exists(oldUserData) && !_exists(newUserData)) {
+    _rename(oldUserData, newUserData)
+  }
+} catch {}
+app.setPath('userData', newUserData)
 
 // ── Single-instance lock ───────────────────────────────────────────────────────
 // Prevents two copies of the app running simultaneously, which would cause WA
@@ -58,7 +66,7 @@ function createWindow(): void {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    title: 'WhatsApp Copilot',
+    title: 'WA Copilot',
     titleBarStyle: 'hiddenInset',
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#1a1a1a' : '#ffffff',
     webPreferences: {
@@ -106,7 +114,7 @@ app.whenReady().then(async () => {
     mainWindow?.webContents.send('wa:historySynced')
   })
 
-  // Set custom menu so macOS menu bar shows "WhatsApp Copilot" instead of "Electron"
+  // Set custom menu so macOS menu bar shows "WA Copilot" instead of "Electron"
   const appMenu = Menu.buildFromTemplate([
     {
       label: app.getName(),

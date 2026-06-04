@@ -109,7 +109,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           <span className="text-5xl">✈️</span>
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">WhatsApp Copilot</h1>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">WA Copilot</h1>
           <p className="text-gray-400 mt-1">Tu asistente de WhatsApp para brokers</p>
         </div>
       </div>

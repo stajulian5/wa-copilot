@@ -1,4 +1,4 @@
-# WhatsApp Copilot ✈️
+# WA Copilot ✈️
 
 A local-first WhatsApp CRM for KAMs — Kanban pipeline, chat panel, AI suggestions, and Google Sheets sync. Runs entirely on your Mac.
 
@@ -94,7 +94,7 @@ wa-copilot/
 
 **Stack:** Electron · React 18 · Zustand · Tailwind CSS · Baileys · better-sqlite3 · Drizzle ORM · Express · Claude API (Anthropic)
 
-All data is stored locally in `~/Library/Application Support/WhatsApp Copilot/crm.sqlite`. Nothing leaves your machine except outgoing WhatsApp messages and optional AI API calls.
+All data is stored locally in `~/Library/Application Support/WA Copilot/crm.sqlite`. Nothing leaves your machine except outgoing WhatsApp messages and optional AI API calls.
 
 ---
 

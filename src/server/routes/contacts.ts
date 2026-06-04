@@ -95,7 +95,7 @@ contactsRouter.post('/:id/escalate', async (req, res) => {
     ``,
     summary,
     ``,
-    `_— Enviado desde WhatsApp Copilot_`
+    `_— Enviado desde WA Copilot_`
   ].filter(l => l !== null).join('\n')
 
   try {

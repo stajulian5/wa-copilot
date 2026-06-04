@@ -202,7 +202,7 @@ function buildPreview(name: string, stage: string, property: string | null, summ
     '',
     summary,
     '',
-    '_— Enviado desde WhatsApp Copilot_'
+    '_— Enviado desde WA Copilot_'
   ].filter(l => l !== null)
   return lines.join('\n')
 }

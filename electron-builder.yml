@@ -1,5 +1,5 @@
 appId: com.mica.wacopilot
-productName: WhatsApp Copilot
+productName: WA Copilot
 copyright: Copyright © 2024 Mica
 
 directories:
@@ -37,7 +37,7 @@ mac:
   notarize: true
 
 dmg:
-  title: WhatsApp Copilot
+  title: WA Copilot
   icon: build/icon.icns
   # Drag-to-Applications install window
   window:
