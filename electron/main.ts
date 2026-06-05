@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, Notification, nativeTheme, Menu, shell, dialog } from 'electron'
+import { autoUpdater } from 'electron-updater'
 
 app.setName('WA Copilot')
 // Pin userData to stable path. Migrate from old 'WhatsApp Copilot' folder if needed.
@@ -139,10 +140,10 @@ app.whenReady().then(async () => {
   createWindow()
   await startBaileys(db, mainWindow!, port)
 
-  // Check for updates on launch (delayed 10 s so the app finishes booting first)
-  // then repeat every 24 hours.
-  setTimeout(checkForUpdates, 10_000)
-  setInterval(checkForUpdates, 24 * 60 * 60 * 1000)
+  // Auto-update via electron-updater
+  // startup: download silently → show "restart to install" banner in UI
+  // 24h:     download silently → restart automatically (user is mid-day, restart is fine)
+  setupAutoUpdater(mainWindow!)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -215,40 +216,70 @@ ipcMain.handle('app:openChromeExtensions', () => {
   })
 })
 
-// ─── Update checker ───────────────────────────────────────────────────────────
+// ─── Auto-updater ────────────────────────────────────────────────────────────
+//
+// Strategy:
+//   startup (10s after boot): download silently → send 'app:updateReady' to renderer
+//                              → green banner appears: user chooses when to restart
+//   every 24h:                download silently → quitAndInstall automatically
+//                              (silent restart + immediate relaunch)
 
-const GITHUB_REPO = 'stajulian5/wa-copilot'
-const CURRENT_VERSION = app.getVersion()          // from package.json
+function setupAutoUpdater(win: BrowserWindow) {
+  // Don't auto-download — we control when to download per trigger
+  autoUpdater.autoDownload = false
+  // Install on quit if update is downloaded but user hasn't restarted yet
+  autoUpdater.autoInstallOnAppQuit = true
 
-async function checkForUpdates() {
-  try {
-    const res = await fetch(
-      `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
-      { headers: { 'User-Agent': 'WhatsApp-Copilot-Updater' } }
-    )
-    if (!res.ok) return
-    const data = await res.json() as { tag_name?: string; html_url?: string }
-    const latest = (data.tag_name ?? '').replace(/^v/, '')
-    if (latest && isNewerVersion(latest, CURRENT_VERSION)) {
-      console.log(`[updater] new version available: ${latest} (current: ${CURRENT_VERSION})`)
-      mainWindow?.webContents.send('app:updateAvailable', {
-        version: latest,
-        url: data.html_url ?? `https://github.com/${GITHUB_REPO}/releases/latest`
-      })
+  let updateSource: 'startup' | 'scheduled' = 'startup'
+
+  // ── Events ──────────────────────────────────────────────────────────────────
+
+  autoUpdater.on('update-available', (info) => {
+    console.log(`[updater] update available: v${info.version} (source: ${updateSource})`)
+    autoUpdater.downloadUpdate()   // start download regardless of source
+  })
+
+  autoUpdater.on('update-not-available', () => {
+    console.log('[updater] app is up to date')
+  })
+
+  autoUpdater.on('download-progress', (p) => {
+    console.log(`[updater] downloading… ${Math.round(p.percent)}%`)
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log(`[updater] v${info.version} downloaded — source: ${updateSource}`)
+
+    if (updateSource === 'startup') {
+      // Startup: tell the renderer to show a "restart to update" banner
+      win.webContents.send('app:updateReady', { version: info.version })
+    } else {
+      // 24h scheduled: restart + relaunch automatically (silent=true, runAfter=true)
+      console.log('[updater] scheduled update — restarting automatically')
+      autoUpdater.quitAndInstall(true, true)
     }
-  } catch (e) {
-    // Network error — silently ignore
-  }
-}
+  })
 
-/** Returns true if `a` is strictly newer than `b` using semver-ish comparison. */
-function isNewerVersion(a: string, b: string): boolean {
-  const parse = (v: string) => v.split('.').map(n => parseInt(n, 10) || 0)
-  const [aMaj, aMin, aPat] = parse(a)
-  const [bMaj, bMin, bPat] = parse(b)
-  if (aMaj !== bMaj) return aMaj > bMaj
-  if (aMin !== bMin) return aMin > bMin
-  return aPat > bPat
+  autoUpdater.on('error', (err) => {
+    console.error('[updater] error:', err.message)
+  })
+
+  // ── IPC: renderer asks to restart now ───────────────────────────────────────
+  ipcMain.handle('app:restartAndInstall', () => {
+    autoUpdater.quitAndInstall(false, true)
+  })
+
+  // ── Startup check (10 s delay) ───────────────────────────────────────────────
+  setTimeout(() => {
+    updateSource = 'startup'
+    autoUpdater.checkForUpdates().catch(() => {})
+  }, 10_000)
+
+  // ── 24-hour scheduled check → auto-install ──────────────────────────────────
+  setInterval(() => {
+    updateSource = 'scheduled'
+    autoUpdater.checkForUpdates().catch(() => {})
+  }, 24 * 60 * 60 * 1000)
 }
 
 ipcMain.handle('app:openReleasePage', (_e, url: string) => {

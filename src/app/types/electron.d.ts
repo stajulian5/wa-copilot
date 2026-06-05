@@ -50,7 +50,8 @@ declare global {
       serverPort: number
 
       // Auto-update
-      onUpdateAvailable: (cb: (info: { version: string; url: string }) => void) => () => void
+      onUpdateReady: (cb: (info: { version: string }) => void) => () => void
+      restartAndInstall: () => Promise<void>
       openReleasePage: (url: string) => Promise<void>
 
       // Chrome extension helpers

@@ -95,12 +95,13 @@ export const api = {
   // Server port (for HTTP API calls from renderer)
   serverPort,
 
-  // Auto-update
-  onUpdateAvailable: (cb: (info: { version: string; url: string }) => void) => {
-    const h = (_e: any, info: { version: string; url: string }) => cb(info)
-    ipcRenderer.on('app:updateAvailable', h)
-    return () => ipcRenderer.removeListener('app:updateAvailable', h)
+  // Auto-update — fired only when update is fully downloaded and ready to install
+  onUpdateReady: (cb: (info: { version: string }) => void) => {
+    const h = (_e: any, info: { version: string }) => cb(info)
+    ipcRenderer.on('app:updateReady', h)
+    return () => ipcRenderer.removeListener('app:updateReady', h)
   },
+  restartAndInstall: () => ipcRenderer.invoke('app:restartAndInstall'),
   openReleasePage: (url: string) => ipcRenderer.invoke('app:openReleasePage', url),
 
   // Chrome extension helpers
