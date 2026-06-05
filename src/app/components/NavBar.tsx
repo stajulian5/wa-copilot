@@ -111,9 +111,11 @@ export function NavBar({
 
   function handleExtClick() {
     if (extStatus === 'gray') {
-      setShowExtPopover(v => !v)
+      // Immediately open WhatsApp Web — most likely the user just needs that tab open.
+      // Also show the install guide in case the extension isn't installed yet.
+      window.api.openReleasePage?.('https://web.whatsapp.com')
+      setShowExtPopover(true)
     } else {
-      // Green/amber — just show the popover with status info
       setShowExtPopover(v => !v)
     }
   }
@@ -199,57 +201,57 @@ export function NavBar({
                 </p>
               </div>
             ) : (
-              /* Not connected — show install guide */
-              <>
-                <div className="px-4 pt-4 pb-3 border-b border-gray-100">
-                  <p className="text-sm font-semibold text-gray-900 mb-1">Connect the Chrome Extension</p>
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    Keeps your messages complete. When the direct WhatsApp connection has a gap, the extension catches anything missed — syncing silently every 2 minutes in the background.
-                  </p>
+              /* Not connected — action-first: two big buttons + compact install steps */
+              <div className="p-4 space-y-3">
+                <p className="text-xs font-semibold text-gray-900">Chrome Extension — not detected</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">
+                  Opens WhatsApp Web → extension syncs messages silently every 2 min as a backup.
+                </p>
+
+                {/* Primary actions */}
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => window.api.openReleasePage?.('https://web.whatsapp.com')}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl text-xs font-semibold transition-colors"
+                  >
+                    <span className="text-base">💬</span>
+                    Open WhatsApp Web in Chrome
+                    <span className="ml-auto opacity-70 text-[10px]">Step 1</span>
+                  </button>
+                  <button
+                    onClick={() => window.api.openChromeExtensions?.()}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition-colors"
+                  >
+                    <span className="text-base">🧩</span>
+                    Open Chrome Extensions
+                    <span className="ml-auto opacity-50 text-[10px]">Step 2</span>
+                  </button>
                 </div>
 
-                <div className="p-4 space-y-3">
+                {/* Compact remaining steps */}
+                <div className="border-t border-gray-100 pt-3 space-y-2">
                   {[
-                    { n: '1', title: 'Open WhatsApp Web in Chrome', desc: 'Go to web.whatsapp.com and make sure you\'re logged in.' },
-                    { n: '2', title: 'Open Chrome\'s extension page', action: true, actionLabel: 'Open Extensions →', onAction: () => { window.api.openChromeExtensions?.(); } },
-                    { n: '3', title: 'Enable Developer Mode', desc: 'Toggle "Developer mode" in the top-right corner. It\'s safe — nothing changes on your computer.' },
-                    { n: '4', title: 'Load the extension folder', desc: 'Click "Load unpacked" and select this folder:', showFolder: true },
-                  ].map(step => (
-                    <div key={step.n} className="flex gap-2.5 items-start">
-                      <span className="w-5 h-5 rounded-full bg-gray-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-                        {step.n}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-800">{step.title}</p>
-                        {step.desc && <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">{step.desc}</p>}
-                        {step.action && (
-                          <button
-                            onClick={step.onAction}
-                            className="mt-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700"
-                          >
-                            {step.actionLabel}
-                          </button>
-                        )}
-                        {step.showFolder && (
-                          <button
-                            onClick={() => window.api.openExtensionInFinder?.()}
-                            className="mt-1.5 flex items-center gap-1.5 text-[11px] bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-600 hover:bg-gray-100 transition-colors w-full text-left"
-                          >
-                            <span>📂</span>
-                            <span className="font-medium">Open extension folder in Finder</span>
-                          </button>
-                        )}
-                      </div>
+                    'Enable "Developer mode" (top-right toggle) — it\'s safe',
+                    'Click "Load unpacked" → select the extension folder:',
+                  ].map((txt, i) => (
+                    <div key={i} className="flex gap-2 items-start">
+                      <span className="w-4 h-4 rounded-full bg-gray-200 text-gray-600 text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 3}</span>
+                      <p className="text-[11px] text-gray-500 leading-snug">{txt}</p>
                     </div>
                   ))}
+                  <button
+                    onClick={() => window.api.openExtensionInFinder?.()}
+                    className="flex items-center gap-1.5 text-[11px] bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-600 hover:bg-gray-100 transition-colors w-full text-left"
+                  >
+                    <span>📂</span>
+                    <span className="font-medium">Open extension folder in Finder</span>
+                  </button>
                 </div>
 
-                <div className="px-4 pb-4">
-                  <p className="text-[10px] text-gray-400 text-center">
-                    WA Copilot works without the extension — this just adds reliability.
-                  </p>
-                </div>
-              </>
+                <p className="text-[10px] text-gray-400 text-center pt-1">
+                  WA Copilot works without it — this just adds backup sync.
+                </p>
+              </div>
             )}
           </div>
         )}
