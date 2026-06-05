@@ -347,7 +347,7 @@ export function ChatPanel({ contactId, onClose }: Props) {
                 ref={searchInputRef}
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Buscar en esta conversación…"
+                placeholder="Search in this conversation…"
                 className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder-gray-400"
               />
               {searchTerm && (
@@ -368,7 +368,7 @@ export function ChatPanel({ contactId, onClose }: Props) {
                   disabled={loading}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-full text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 shadow-sm transition-colors disabled:opacity-50"
                 >
-                  {loading ? <><span className="animate-spin">⏳</span> Cargando…</> : <>↑ Mensajes anteriores</>}
+                  {loading ? <><span className="animate-spin">⏳</span> Loading…</> : <>↑ Older messages</>}
                 </button>
               </div>
             )}
@@ -438,7 +438,7 @@ export function ChatPanel({ contactId, onClose }: Props) {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Escribe un mensaje…"
+                placeholder="Type a message…"
                 rows={1}
                 className="selectable flex-1 resize-none border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-gray-300 max-h-32"
                 style={{ minHeight: '40px' }}
@@ -461,7 +461,7 @@ export function ChatPanel({ contactId, onClose }: Props) {
         <div className="flex-1 flex flex-col p-4">
           <textarea
             className="selectable flex-1 resize-none text-sm text-gray-700 outline-none placeholder-gray-300"
-            placeholder="Notas privadas sobre este contacto (no se envían por WhatsApp)…"
+            placeholder="Private notes about this contact (not sent via WhatsApp)…"
             value={notes}
             onChange={e => setNotes(e.target.value)}
             onBlur={saveNotes}

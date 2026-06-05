@@ -165,7 +165,7 @@ export function KanbanPage({ waStatus, accounts, activeAccountId, lastSyncAt, on
         <div className="flex items-center gap-3 px-4 py-2.5 bg-[#054640] text-white text-sm">
           <span className="text-lg">💬</span>
           <span className="flex-1 text-[13px]">
-            Importa <strong>todas</strong> tus conversaciones: ve a <strong>Configuración → Volver a vincular</strong> y escanea el código QR desde WhatsApp en tu teléfono.
+            Import <strong>all</strong> your conversations: go to <strong>Settings → Re-link WhatsApp</strong> and scan the QR code from WhatsApp on your phone.
           </span>
           <button
             onClick={() => onOpenSettings()}
@@ -237,7 +237,7 @@ export function KanbanPage({ waStatus, accounts, activeAccountId, lastSyncAt, on
             },
             {
               icon: '⚡',
-              label: 'Escalar conversación',
+              label: 'Escalate conversation',
               onClick: () => setEscalateContactId(contextMenu.contactId)
             }
           ]}

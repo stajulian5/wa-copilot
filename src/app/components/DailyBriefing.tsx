@@ -40,12 +40,12 @@ export function DailyBriefing({ onClose }: Props) {
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-gray-900">Buenos días ☀️</h2>
+          <h2 className="font-semibold text-gray-900">Good morning ☀️</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
         </div>
 
         <Section title="📬 Necesita respuesta" items={needsReply} onOpen={open} nameKey="name" />
-        <Section title="⚡ Están quedando sin atención" items={goingStale} onOpen={open} nameKey="name" />
+        <Section title="⚡ Going without attention" items={goingStale} onOpen={open} nameKey="name" />
 
         {snoozesdue.length > 0 && (
           <div className="mt-4">
@@ -66,7 +66,7 @@ export function DailyBriefing({ onClose }: Props) {
         )}
 
         <button onClick={onClose} className="mt-5 w-full py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-700">
-          Empezar el día
+          Start my day
         </button>
       </div>
     </div>

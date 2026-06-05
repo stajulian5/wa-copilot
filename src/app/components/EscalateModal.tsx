@@ -88,7 +88,7 @@ export function EscalateModal({ contactId, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
-            <h2 className="font-semibold text-gray-900">Escalar conversación</h2>
+            <h2 className="font-semibold text-gray-900">Escalate conversation</h2>
             <p className="text-xs text-gray-400 mt-0.5">{contactName}</p>
           </div>
           <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-700 rounded-lg">✕</button>
@@ -104,7 +104,7 @@ export function EscalateModal({ contactId, onClose }: Props) {
             {teamMembers.length === 0 ? (
               <p className="text-sm text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
                 No hay integrantes del equipo configurados.{' '}
-                <span className="font-medium">Ve a Configuración → Equipo</span> para agregar personas.
+                <span className="font-medium">Go to Settings → Team</span> to add people.
               </p>
             ) : (
               <div className="flex flex-col gap-1.5">
@@ -143,7 +143,7 @@ export function EscalateModal({ contactId, onClose }: Props) {
                 onChange={e => setSummary(e.target.value)}
                 rows={5}
                 className="selectable w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-700 resize-none outline-none focus:ring-2 focus:ring-gray-300"
-                placeholder="Escribe un resumen de la situación…"
+                placeholder="Write a summary of the situation…"
               />
             )}
           </div>
@@ -194,7 +194,7 @@ const STAGE_LABELS: Record<string, string> = {
 
 function buildPreview(name: string, stage: string, property: string | null, summary: string): string {
   const lines = [
-    '🔔 *Conversación escalada*',
+    '🔔 *Escalated conversation*',
     '',
     `*Contacto:* ${name}`,
     `*Etapa:* ${STAGE_LABELS[stage] ?? stage}`,

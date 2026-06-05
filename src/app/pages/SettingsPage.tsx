@@ -74,7 +74,7 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
     const data = await r.json()
     setSyncing(false)
     if (data.ok) setLastSync(new Date().toISOString())
-    else alert(`Error en sync: ${data.error}`)
+    else alert(`Sync error: ${data.error}`)
   }
 
   // Cost estimate (Haiku: $0.80/M input, $4.00/M output)
@@ -89,16 +89,16 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
         {/* Traffic lights spacer — same width as NavBar */}
         <div className="w-16 shrink-0 title-bar-drag" />
         <button onClick={onBack} className="title-bar-no-drag text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1">
-          ← Volver
+          ← Back
         </button>
-        <span className="ml-4 font-semibold text-sm text-gray-900">Configuración</span>
+        <span className="ml-4 font-semibold text-sm text-gray-900">Settings</span>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 max-w-2xl mx-auto w-full">
 
         {/* Anthropic API Key */}
         <section className="mb-8">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">Clave API de Anthropic</h2>
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">Anthropic API Key</h2>
           <div className="flex gap-2">
             <input
               type={showKey ? 'text' : 'password'}
@@ -108,17 +108,17 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
               className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
             />
             <button onClick={() => setShowKey(!showKey)} className="px-3 py-2 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">
-              {showKey ? 'Ocultar' : 'Ver'}
+              {showKey ? 'Hide' : 'Show'}
             </button>
             <button onClick={saveApiKey} className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-700">
-              {keySaved ? '✓ Guardado' : 'Guardar'}
+              {keySaved ? '✓ Saved' : 'Save'}
             </button>
           </div>
         </section>
 
         {/* AI Tone */}
         <section className="mb-8">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">Tono del asistente IA</h2>
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">AI Assistant Tone</h2>
           <div className="flex flex-wrap gap-2">
             {toneOptions.map(t => (
               <button
@@ -138,11 +138,11 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
 
         {/* Token Usage */}
         <section className="mb-8">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">Uso de tokens (este mes)</h2>
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">Token Usage (this month)</h2>
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="flex justify-between text-sm mb-2">
               <span className="text-gray-600">${costUsd} USD</span>
-              <span className="text-gray-400">Presupuesto: ${monthlyBudgetUsd}</span>
+              <span className="text-gray-400">Budget: ${monthlyBudgetUsd}</span>
             </div>
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
               <div
@@ -151,7 +151,7 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
               />
             </div>
             <p className="text-xs text-gray-400 mt-2">
-              {usage?.inputTokens?.toLocaleString() ?? 0} tokens entrada · {usage?.outputTokens?.toLocaleString() ?? 0} salida
+              {usage?.inputTokens?.toLocaleString() ?? 0} input tokens · {usage?.outputTokens?.toLocaleString() ?? 0} output
             </p>
           </div>
         </section>
@@ -160,8 +160,8 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
         <section className="mb-8">
           <h2 className="text-sm font-semibold text-gray-900 mb-1">Google Sheets (Atlas)</h2>
           <p className="text-xs text-gray-400 mb-3">
-            El spreadsheet debe estar compartido como <strong>"Cualquier persona con el enlace puede ver"</strong>.
-            No se requiere cuenta de servicio.
+            The spreadsheet must be shared as <strong>"Anyone with the link can view"</strong>.
+            No service account required.
           </p>
           <div className="flex flex-col gap-3">
             <input
@@ -173,16 +173,16 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
             <input
               value={sheetsTab}
               onChange={e => setSheetsTab(e.target.value)}
-              placeholder="Nombre de la pestaña (ej: Brokers)"
+              placeholder="Tab name (e.g. Brokers)"
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
             />
             <div className="flex items-center gap-3">
               <button onClick={runSync} disabled={syncing} className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50">
-                {syncing ? 'Sincronizando…' : 'Sincronizar ahora'}
+                {syncing ? 'Syncing…' : 'Sync now'}
               </button>
               {lastSync && (
                 <span className="text-xs text-gray-400">
-                  Último sync: {new Date(lastSync).toLocaleString('es-MX')}
+                  Last sync: {new Date(lastSync).toLocaleString()}
                 </span>
               )}
             </div>
@@ -191,9 +191,9 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
 
         {/* Team members for escalation */}
         <section className="mb-8 border-t border-gray-100 pt-8">
-          <h2 className="text-sm font-semibold text-gray-900 mb-1">Equipo (escalaciones)</h2>
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">Team (escalations)</h2>
           <p className="text-xs text-gray-400 mb-3">
-            Personas a las que puedes escalar conversaciones. Se les envía un resumen por WhatsApp.
+            People you can escalate conversations to. They receive a WhatsApp summary.
           </p>
 
           {/* Existing members */}
@@ -224,7 +224,7 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
             <input
               value={newMemberName}
               onChange={e => setNewMemberName(e.target.value)}
-              placeholder="Nombre"
+              placeholder="Name"
               className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-gray-300"
             />
             <input
@@ -248,7 +248,7 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
               disabled={!newMemberName.trim() || !newMemberPhone.trim()}
               className="px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg disabled:opacity-40 hover:bg-gray-700"
             >
-              + Agregar
+              + Add
             </button>
           </div>
         </section>
@@ -257,10 +257,10 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
         <section className="mb-8 border-t border-gray-100 pt-8">
           <h2 className="text-sm font-semibold text-gray-900 mb-1">Google Contacts</h2>
           <p className="text-xs text-gray-400 mb-3">
-            Sincroniza nombres de tus contactos de Google con los números de WhatsApp.
-            Necesitás un <strong>OAuth 2.0 Client ID</strong> de tipo <em>Desktop app</em> en{' '}
+            Syncs your Google contact names with WhatsApp numbers.
+            You need an <strong>OAuth 2.0 Client ID</strong> of type <em>Desktop app</em> at{' '}
             <span className="text-gray-600">Google Cloud Console → APIs &amp; Services → Credentials</span>.
-            Activá la <strong>People API</strong> en el proyecto.
+            Enable the <strong>People API</strong> in the project.
           </p>
 
           <div className="flex flex-col gap-2 mb-3">
@@ -293,7 +293,7 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
               disabled={!googleClientId || !googleClientSecret}
               className="self-start px-3 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 disabled:opacity-40"
             >
-              Guardar credenciales
+              Save credentials
             </button>
           </div>
 
@@ -310,11 +310,11 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
                 disabled={googleConnecting || !googleClientId || !googleClientSecret}
                 className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50"
               >
-                {googleConnecting ? 'Esperando autorización…' : 'Conectar Google Contacts'}
+                {googleConnecting ? 'Waiting for authorization…' : 'Connect Google Contacts'}
               </button>
             ) : (
               <>
-                <span className="text-sm text-green-600 font-medium">✓ Conectado</span>
+                <span className="text-sm text-green-600 font-medium">✓ Connected</span>
                 <button
                   onClick={async () => {
                     setGoogleSyncing(true)
@@ -323,7 +323,7 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
                     setGoogleSyncing(false)
                     if (data.ok) {
                       setGoogleLastSync(new Date().toISOString())
-                      alert(`Sincronización completa: ${data.updated} contactos actualizados de ${data.total} (${data.googleContacts} en Google Contacts)`)
+                      alert(`Sync complete: ${data.updated} contacts updated out of ${data.total} (${data.googleContacts} in Google Contacts)`)
                     } else {
                       alert(`Error: ${data.error}`)
                     }
@@ -331,11 +331,11 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
                   disabled={googleSyncing}
                   className="px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50"
                 >
-                  {googleSyncing ? 'Sincronizando…' : 'Sincronizar ahora'}
+                  {googleSyncing ? 'Syncing…' : 'Sync now'}
                 </button>
                 <button
                   onClick={async () => {
-                    if (!confirm('¿Desconectar Google Contacts?')) return
+                    if (!confirm('Disconnect Google Contacts?')) return
                     await fetch(`http://127.0.0.1:${PORT()}/google-contacts/disconnect`, { method: 'DELETE' })
                     setGoogleConnected(false)
                     setGoogleLastSync(null)
@@ -348,7 +348,7 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
             )}
             {googleLastSync && (
               <span className="text-xs text-gray-400">
-                Último sync: {new Date(googleLastSync).toLocaleString('es-MX')}
+                Last sync: {new Date(googleLastSync).toLocaleString()}
               </span>
             )}
           </div>
@@ -356,13 +356,13 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
 
         {/* WhatsApp re-link */}
         <section className="mb-8 border-t border-gray-100 pt-8">
-          <h2 className="text-sm font-semibold text-gray-900 mb-1">Vincular WhatsApp</h2>
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">Link WhatsApp</h2>
           <p className="text-xs text-gray-400 mb-3">
-            Desvincula el dispositivo actual y muestra un nuevo código QR. Usa esto para importar todo tu historial de conversaciones o cambiar el número vinculado.
+            Unlinks the current device and shows a new QR code. Use this to import your full conversation history or switch the linked number.
           </p>
           <button
             onClick={async () => {
-              if (!confirm('¿Desvincular WhatsApp y mostrar código QR? Se importará todo tu historial de conversaciones al volver a escanear.')) return
+              if (!confirm('Unlink WhatsApp and show QR code? Your full conversation history will be imported when you scan again.')) return
               setResetting(true)
               // Safety timeout — reset button if the IPC takes too long or hangs
               const safetyTimer = setTimeout(() => setResetting(false), 10_000)
@@ -378,7 +378,7 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
             disabled={resetting}
             className="px-4 py-2 bg-red-50 text-red-700 border border-red-200 text-sm rounded-lg hover:bg-red-100 disabled:opacity-50"
           >
-            {resetting ? 'Desvinculando…' : '🔄 Volver a vincular'}
+            {resetting ? 'Unlinking…' : '🔄 Re-link WhatsApp'}
           </button>
         </section>
 

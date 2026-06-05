@@ -36,7 +36,7 @@ export function AddAccountModal({ qr, accountId, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center gap-5 w-[360px]">
         <div className="flex items-center gap-2 self-start w-full justify-between">
-          <h2 className="text-base font-semibold text-gray-900">Vincular nuevo número</h2>
+          <h2 className="text-base font-semibold text-gray-900">Link new number</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-700 text-xl leading-none"
@@ -46,7 +46,7 @@ export function AddAccountModal({ qr, accountId, onClose }: Props) {
         </div>
 
         <p className="text-xs text-gray-500 text-center">
-          Abre WhatsApp en el segundo teléfono → ⋮ → <strong>Dispositivos vinculados</strong> → <strong>Vincular dispositivo</strong>
+          Open WhatsApp on the second phone → ⋮ → <strong>Linked Devices</strong> → <strong>Link a Device</strong>
         </p>
 
         <div className="w-64 h-64 flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200">
@@ -55,7 +55,7 @@ export function AddAccountModal({ qr, accountId, onClose }: Props) {
           ) : showExpired ? (
             <div className="flex flex-col items-center gap-2 text-center p-6">
               <span className="text-2xl">🔄</span>
-              <p className="text-xs text-gray-400">Código expirado — generando uno nuevo…</p>
+              <p className="text-xs text-gray-400">Code expired — generating a new one…</p>
             </div>
           ) : (
             <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />

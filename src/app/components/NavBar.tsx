@@ -87,8 +87,8 @@ export function NavBar({
   }
 
   function accountLabel(account: typeof activeAccount): string {
-    if (!account) return accounts.length === 0 ? '…' : 'Mi número'
-    if (account.label && account.label !== 'Mi número') return account.label
+    if (!account) return accounts.length === 0 ? '…' : 'My number'
+    if (account.label && account.label !== 'My number') return account.label
     return formatJidPhone(account.jid ?? null) ?? account.label
   }
 
@@ -132,7 +132,7 @@ export function NavBar({
           type="text"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          placeholder="Buscar broker… ⌘K"
+          placeholder="Search… ⌘K"
           className="w-full bg-gray-100 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-gray-300"
         />
       </div>
@@ -312,7 +312,7 @@ export function NavBar({
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   <span className="text-base leading-none">＋</span>
-                  Agregar número
+                  Add number
                 </button>
               </div>
             </div>

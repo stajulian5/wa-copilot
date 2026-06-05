@@ -66,9 +66,9 @@ export function OnboardingPage({ waStatus, initialQr, onQRReceived, onComplete, 
       {/* Step indicator — only during QR + extension */}
       {step !== 'welcome' && (
         <div className="fixed top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
-          <StepDot active={step === 'qr'} done={step === 'extension'} label="Vincular" />
+          <StepDot active={step === 'qr'} done={step === 'extension'} label="Link" />
           {isFirstRun && !isRelink && (
-            <StepDot active={step === 'extension'} done={false} label="Extensión" />
+            <StepDot active={step === 'extension'} done={false} label="Extension" />
           )}
         </div>
       )}
@@ -110,16 +110,16 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         </div>
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">WA Copilot</h1>
-          <p className="text-gray-400 mt-1">Tu asistente de WhatsApp para brokers</p>
+          <p className="text-gray-400 mt-1">Your WhatsApp assistant for client teams</p>
         </div>
       </div>
 
       {/* Features */}
       <div className="w-full space-y-2.5">
         {[
-          { icon: '📋', title: 'Pipeline de brokers', desc: 'Organiza tus conversaciones de WhatsApp en un tablero visual.' },
-          { icon: '💬', title: 'Chat integrado',       desc: 'Lee y responde mensajes sin salir del WA Copilot.' },
-          { icon: '✨', title: 'Respuestas con IA',    desc: 'Sugerencias automáticas de respuesta — tú decides si enviarlas.' },
+          { icon: '📋', title: 'Client pipeline', desc: 'Organise your WhatsApp conversations in a visual board.' },
+          { icon: '💬', title: 'Integrated chat',       desc: 'Read and reply to messages without leaving WA Copilot.' },
+          { icon: '✨', title: 'AI replies', desc: 'Automatic reply suggestions — you decide whether to send them.' },
         ].map(f => (
           <div key={f.title} className="flex gap-3 p-3.5 rounded-2xl bg-gray-50 text-left">
             <span className="text-2xl shrink-0">{f.icon}</span>
@@ -136,10 +136,10 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
           onClick={onNext}
           className="w-full py-3.5 bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-semibold rounded-2xl transition-all shadow-lg shadow-green-200 text-base"
         >
-          Comenzar configuración →
+          Start setup →
         </button>
         <p className="text-[11px] text-gray-400">
-          Solo necesitas tu teléfono y 2 minutos. Sin cuentas de empresa.
+          All you need is your phone and 2 minutes. No business account required.
         </p>
       </div>
     </div>
@@ -159,12 +159,12 @@ function QRStep({ qrDataUrl, showExpired, waStatus, isRelink }: {
 
       <div>
         <h2 className="text-xl font-bold text-gray-900">
-          {isRelink ? 'Vuelve a vincular tu WhatsApp' : 'Vincula tu WhatsApp'}
+          {isRelink ? 'Re-link your WhatsApp' : 'Link your WhatsApp'}
         </h2>
         <p className="text-gray-500 text-sm mt-1">
           {isRelink
-            ? 'Tu sesión expiró. Sigue los mismos pasos de la primera vez.'
-            : 'Sigue estos pasos en tu teléfono — solo se hace una vez.'}
+            ? 'Your session expired. Follow the same steps as the first time.'
+            : 'Follow these steps on your phone — only done once.'}
         </p>
       </div>
 
@@ -174,20 +174,20 @@ function QRStep({ qrDataUrl, showExpired, waStatus, isRelink }: {
         {/* QR code — shown prominently first */}
         <div className="relative w-56 h-56 flex items-center justify-center bg-white rounded-3xl border-2 border-gray-100 shadow-xl">
           {qrDataUrl && !showExpired ? (
-            <img src={qrDataUrl} alt="Código QR de WhatsApp" className="w-48 h-48 rounded-2xl" />
+            <img src={qrDataUrl} alt="WhatsApp QR code" className="w-48 h-48 rounded-2xl" />
           ) : showExpired ? (
             <div className="flex flex-col items-center gap-2 p-4">
               <span className="text-3xl animate-spin">🔄</span>
-              <p className="text-sm font-medium text-gray-600">Código expirado</p>
-              <p className="text-xs text-gray-400">Generando uno nuevo…</p>
+              <p className="text-sm font-medium text-gray-600">Code expired</p>
+              <p className="text-xs text-gray-400">Generating a new one…</p>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3">
               <div className="w-10 h-10 border-[3px] border-gray-100 border-t-green-500 rounded-full animate-spin" />
               <p className="text-sm text-gray-400">
-                {waStatus === 'connecting' ? 'Conectando…' : 'Preparando código QR…'}
+                {waStatus === 'connecting' ? 'Connecting…' : 'Preparing QR code…'}
               </p>
-              <p className="text-[10px] text-gray-300">Puede tardar hasta 15 segundos</p>
+              <p className="text-[10px] text-gray-300">May take up to 15 seconds</p>
             </div>
           )}
         </div>
@@ -195,10 +195,10 @@ function QRStep({ qrDataUrl, showExpired, waStatus, isRelink }: {
         {/* Steps */}
         <div className="w-full space-y-2 text-left">
           {[
-            { text: 'Abre WhatsApp en tu teléfono' },
+            { text: 'Open WhatsApp on your phone' },
             { text: 'Toca ⋮ (Android) o Ajustes ⚙️ (iPhone) → "Dispositivos vinculados"' },
-            { text: 'Toca "Vincular dispositivo"' },
-            { text: 'Apunta la cámara al código QR de arriba ↑' },
+            { text: 'Tap "Link a device"' },
+            { text: 'Point the camera at the QR code above ↑' },
           ].map((s, i) => (
             <div key={i} className="flex items-start gap-3">
               <span className="w-5 h-5 rounded-full bg-green-500 text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
@@ -223,10 +223,10 @@ function QRStep({ qrDataUrl, showExpired, waStatus, isRelink }: {
           waStatus === 'connecting' ? 'bg-amber-400 animate-pulse' : 'bg-red-500'
         }`} />
         {waStatus === 'connected'
-          ? '¡Vinculado! Continuando…'
+          ? 'Linked! Continuing…'
           : waStatus === 'connecting'
-          ? 'Esperando que escanees el código…'
-          : 'Sin conexión a internet'}
+          ? 'Waiting for you to scan the code…'
+          : 'No internet connection'}
       </div>
     </div>
   )
@@ -279,8 +279,8 @@ function ExtensionStep({ extensionPath, onDone }: { extensionPath: string; onDon
             {openedChrome ? '✓' : '1'}
           </span>
           <div className="flex-1 text-left">
-            <p className="text-sm font-semibold text-gray-900">Abre la página de extensiones en Chrome</p>
-            <p className="text-xs text-gray-500 mt-0.5">Haz clic abajo y Chrome se abre solo en la página correcta.</p>
+            <p className="text-sm font-semibold text-gray-900">Open Chrome's extensions page</p>
+            <p className="text-xs text-gray-500 mt-0.5">Click below and Chrome opens to the right page automatically.</p>
             <button
               onClick={handleOpenChrome}
               className={`mt-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -298,10 +298,10 @@ function ExtensionStep({ extensionPath, onDone }: { extensionPath: string; onDon
         <div className="flex gap-3 items-start p-3.5 rounded-2xl border border-gray-100 bg-gray-50">
           <span className="w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
           <div className="flex-1 text-left">
-            <p className="text-sm font-semibold text-gray-900">Activa "Modo desarrollador"</p>
+            <p className="text-sm font-semibold text-gray-900">Activa "Developer mode"</p>
             <p className="text-xs text-gray-500 mt-0.5">
               En la esquina superior derecha de Chrome hay un interruptor llamado
-              <strong> "Modo desarrollador"</strong>. Actívalo.
+              <strong> "Developer mode"</strong>. Enable it.
               <span className="text-green-600 font-medium"> Es seguro — no cambia nada en tu computadora.</span>
             </p>
           </div>
@@ -317,10 +317,10 @@ function ExtensionStep({ extensionPath, onDone }: { extensionPath: string; onDon
             {openedFinder ? '✓' : '3'}
           </span>
           <div className="flex-1 text-left">
-            <p className="text-sm font-semibold text-gray-900">Carga la extensión</p>
+            <p className="text-sm font-semibold text-gray-900">Load the extension</p>
             <p className="text-xs text-gray-500 mt-0.5">
               Haz clic en <strong>"Cargar descomprimida"</strong> en Chrome, luego abre
-              la carpeta que aparece aquí abajo:
+              the folder shown below:
             </p>
             <button
               onClick={handleOpenFinder}
@@ -330,7 +330,7 @@ function ExtensionStep({ extensionPath, onDone }: { extensionPath: string; onDon
                   : 'bg-blue-500 hover:bg-blue-600 text-white'
               }`}
             >
-              {openedFinder ? '✓ Carpeta abierta en Finder' : '📂 Abrir carpeta de la extensión'}
+              {openedFinder ? '✓ Folder opened in Finder' : '📂 Open extension folder'}
             </button>
           </div>
         </div>
@@ -342,8 +342,8 @@ function ExtensionStep({ extensionPath, onDone }: { extensionPath: string; onDon
             <p className="text-sm font-semibold text-gray-900">Sincroniza los contactos</p>
             <p className="text-xs text-gray-500 mt-0.5">
               Abre <strong>web.whatsapp.com</strong> en Chrome, haz clic en
-              el ícono 🧩 de la extensión y presiona <strong>"Sincronizar contactos"</strong>.
-              Los nombres aparecerán en WA Copilot en segundos.
+              the 🧩 extension icon and click <strong>"Sync contacts"</strong>.
+              Names will appear in WA Copilot within seconds.
             </p>
           </div>
         </div>

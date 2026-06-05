@@ -11,9 +11,9 @@ interface Props {
 const QUICK_OPTIONS = [
   { label: 'En 1 hora', hours: 1 },
   { label: 'Esta tarde (6 pm)', hours: null, time: '18:00' },
-  { label: 'Mañana 9 am', hours: null, time: 'tomorrow-09:00' },
-  { label: 'En 3 días', hours: 72 },
-  { label: 'La próxima semana', hours: 168 },
+  { label: 'Tomorrow 9am', hours: null, time: 'tomorrow-09:00' },
+  { label: 'In 3 days', hours: 72 },
+  { label: 'Next week', hours: 168 },
 ]
 
 function resolveQuickOption(opt: typeof QUICK_OPTIONS[0]): Date {
