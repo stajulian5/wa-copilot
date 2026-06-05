@@ -249,17 +249,19 @@ function ExtensionStep({ extensionPath, onDone }: { extensionPath: string; onDon
   }
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full max-w-sm text-center">
+    <div className="flex flex-col items-center gap-5 w-full max-w-sm text-center">
 
       <div className="flex flex-col items-center gap-3">
-        <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-          <span className="text-4xl">🧩</span>
+        <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+          <span className="text-3xl">🧩</span>
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Un último paso</h2>
-          <p className="text-gray-500 text-sm mt-1 leading-relaxed">
-            La extensión de Chrome hace que los <strong className="text-gray-700">nombres de tus brokers</strong> aparezcan
-            en el WA Copilot. Solo lo haces una vez.
+          <div className="inline-block bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 tracking-wide uppercase">
+            Optional — but recommended
+          </div>
+          <h2 className="text-lg font-bold text-gray-900">Add the Chrome Extension</h2>
+          <p className="text-gray-500 text-xs mt-1.5 leading-relaxed max-w-[260px] mx-auto">
+            WA Copilot works perfectly without it. The extension adds a <strong className="text-gray-700">backup sync</strong> — if the direct WhatsApp connection ever misses a message, the extension catches it automatically every 2 minutes.
           </p>
         </div>
       </div>
@@ -353,13 +355,13 @@ function ExtensionStep({ extensionPath, onDone }: { extensionPath: string; onDon
           onClick={onDone}
           className="w-full py-3 bg-green-500 hover:bg-green-600 active:scale-[0.98] text-white font-semibold rounded-2xl transition-all shadow-lg shadow-green-200"
         >
-          Listo, abrir el Kanban →
+          Done — open my Kanban →
         </button>
         <button
           onClick={onDone}
-          className="w-full py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          className="w-full py-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
         >
-          Omitir por ahora — puedo instalarlo en cualquier momento desde Configuración
+          Skip for now · You can add it later by clicking the "Chrome Ext" badge in the top bar
         </button>
       </div>
     </div>
