@@ -86,6 +86,8 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
   return (
     <div className="flex flex-col h-screen bg-white">
       <div className="title-bar-drag h-10 bg-gray-50 border-b border-gray-200 flex items-center px-4">
+        {/* Traffic lights spacer — same width as NavBar */}
+        <div className="w-16 shrink-0 title-bar-drag" />
         <button onClick={onBack} className="title-bar-no-drag text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1">
           ← Volver
         </button>
