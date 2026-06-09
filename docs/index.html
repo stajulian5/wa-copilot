@@ -1323,10 +1323,10 @@
 
 <script>
   // ── Config ────────────────────────────────────────────────────────────────
-  const BASE         = 'https://github.com/stajulian5/wa-copilot/releases/latest/download/';
-  const ARM_DMG      = BASE + 'WA-Copilot-0.3.1-arm64.dmg';
-  const INTEL_DMG    = BASE + 'WA-Copilot-0.3.1.dmg';
-  const WIN_EXE      = BASE + 'WA-Copilot-0.3.1-Setup.exe';
+  const BASE         = 'https://github.com/stajulian5/wa-copilot/releases/download/v0.4.0/';
+  const ARM_DMG      = BASE + 'WA.Copilot-0.4.0-arm64.dmg';
+  const INTEL_DMG    = BASE + 'WA.Copilot-0.4.0.dmg';
+  const WIN_EXE      = BASE + 'WA.Copilot.Setup.0.4.0.exe';
   const API_URL      = 'https://script.google.com/macros/s/AKfycbxWZpECQg5Gp-9RPmDzsOB3SihdPLMoLi8AHT3FfqrLCuvfrDvEf7hoMDqlEpqooRrZRw/exec';
 
   // ── Device detection ──────────────────────────────────────────────────────
@@ -1424,7 +1424,14 @@
   // ── Platform chosen → trigger download → show success ────────────────────
   function downloadPlatform(platform) {
     const url = PLATFORM_URLS[platform];
-    if (url) window.location.href = url;
+    if (url) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
 
     document.getElementById('am-platform-view').style.display = 'none';
     document.getElementById('am-success-view').style.display  = 'block';
