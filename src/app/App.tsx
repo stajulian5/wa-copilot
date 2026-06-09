@@ -179,26 +179,6 @@ export default function App() {
         />
       )}
 
-      {updateInfo && (
-        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-green-700 text-white text-sm">
-          <span>✨ WA Copilot <strong>v{updateInfo.version}</strong> downloaded and ready</span>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => window.api.restartAndInstall()}
-              className="bg-white text-green-800 font-semibold px-3 py-1 rounded-lg hover:bg-green-100 transition-colors text-xs"
-            >
-              Restart now →
-            </button>
-            <button
-              onClick={() => setUpdateInfo(null)}
-              className="opacity-60 hover:opacity-100 transition-opacity text-lg leading-none"
-              title="Dismiss — will install on next restart"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
 
       <KanbanPage
         waStatus={waStatus}

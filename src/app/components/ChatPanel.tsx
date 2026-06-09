@@ -93,7 +93,7 @@ type Tab = 'chat' | 'notes'
 export function ChatPanel({ contactId, onClose }: Props) {
   const contact = useContactsStore(s => s.contacts.find(c => c.id === contactId))
   const { updateContact } = useContactsStore()
-  const { byContact, setMessages, prependMessages, upsertMessage } = useMessagesStore()
+  const { byContact, setMessages, prependMessages, upsertMessage, resolveOptimistic } = useMessagesStore()
   const messages = byContact[contactId] ?? []
 
   const [tab, setTab] = useState<Tab>('chat')
@@ -193,9 +193,9 @@ export function ChatPanel({ contactId, onClose }: Props) {
     setInput('')
     setAiSuggestion(null)
     inputRef.current?.focus()
-    insertOptimistic(text.trim())                   // show immediately
-    await window.api.sendMessage(contact.whatsappId, text.trim())
-    // The real message arrives via wa:newMessage → upsertMessage deduplicates by whatsappMsgId
+    const tempId = insertOptimistic(text.trim())    // show immediately
+    const realId = await window.api.sendMessage(contact.whatsappId, text.trim())
+    if (realId) resolveOptimistic(tempId, realId)   // swap temp ID → real ID before upsert arrives
   }
 
   // #4 — send media file

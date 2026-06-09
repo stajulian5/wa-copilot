@@ -49,7 +49,7 @@ export function useWhatsApp(setStatus: (s: WAStatus) => void, onMessage?: () => 
         lastMessageSenderName: contact.isGroup
           ? (raw.fromMe ? 'Tú' : (raw.senderName ?? contact.lastMessageSenderName ?? null))
           : null,
-        unreadCount: raw.fromMe ? contact.unreadCount : (contact.unreadCount ?? 0) + 1,
+        unreadCount: raw.fromMe ? 0 : (contact.unreadCount ?? 0) + 1,
         ...(shouldReopen ? { stage: 'new', stageChangedAt: new Date() } : {})
       })
 

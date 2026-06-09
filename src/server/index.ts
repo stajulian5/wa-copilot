@@ -12,6 +12,7 @@ import { sheetsRouter } from './routes/sheets'
 import { settingsRouter } from './routes/settings'
 import { remindersRouter } from './routes/reminders'
 import { googleContactsRouter } from './routes/googleContacts'
+import { statsRouter } from './routes/stats'
 
 import { EventEmitter } from 'events'
 export const serverEvents = new EventEmitter()
@@ -84,6 +85,7 @@ export async function startServer(db: BetterSQLite3Database<typeof schema>, user
   app.use('/settings', settingsRouter)
   app.use('/reminders', remindersRouter)
   app.use('/', googleContactsRouter)
+  app.use('/stats', statsRouter)
 
   const server = createServer(app)
 

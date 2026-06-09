@@ -128,6 +128,27 @@ export async function startBaileys(
       AND last_message_sender_name IS NULL
   ` as any)
 
+  // ── Startup: reconcile unread_count from local message history ─────────────
+  // WA doesn't reliably push read receipts, so counts drift over time.
+  // Recalculate as: inbound messages since the last outbound message.
+  // This is the best approximation we can make from local data alone.
+  const recalc = db.run(`
+    UPDATE contacts
+    SET
+      unread_count = (
+        SELECT COUNT(*) FROM messages m
+        WHERE m.contact_id = contacts.id
+          AND m.direction = 'in'
+          AND m.timestamp > COALESCE(
+            (SELECT MAX(m2.timestamp) FROM messages m2
+             WHERE m2.contact_id = contacts.id AND m2.direction = 'out'),
+            0
+          )
+      ),
+      updated_at = ${Date.now()}
+  ` as any)
+  console.log(`[baileys] recalculated unread counts for ${(recalc as any).changes} contacts`)
+
   // ── Startup: re-open resolved contacts that have unread inbound messages ───
   // After reconciling last_message_at / last_message_direction above, any
   // resolved contact whose most-recent message is inbound and unread should
@@ -263,10 +284,8 @@ export async function startBaileys(
     const session = sessions.get(activeAccountId)
     if (!session?.sock) throw new Error('WA not connected')
     const result = await session.sock.sendMessage(jid, { text })
-    if (result) {
-      await upsertMessage(db, result, activeAccountId)
-      win.webContents.send('wa:newMessage', serializeMsg(result))
-    }
+    if (result) await upsertMessage(db, result, activeAccountId)
+    // Do NOT emit wa:newMessage here — messages.upsert fires it; emitting twice causes duplicates
     return result?.key?.id
   })
 
@@ -476,8 +495,9 @@ async function connectSession(
       const jid = msg.key.remoteJid
       if (jid.endsWith('@broadcast') || jid === 'status@broadcast') continue
       try {
-        const { contact: upsertedContact, isNew } = await upsertMessage(db, msg, session.accountId)
-        win.webContents.send('wa:newMessage', serializeMsg(msg))
+        const { contact: upsertedContact, isNew, isNewMessage } = await upsertMessage(db, msg, session.accountId)
+        // Only push to frontend if this message wasn't already in the DB (e.g. from history sync or prior upsert)
+        if (isNewMessage) win.webContents.send('wa:newMessage', serializeMsg(msg))
         if (isNew && upsertedContact) {
           win.webContents.send('wa:contactUpserted', upsertedContact)
           fetchSingleAvatar(upsertedContact, session, win)
@@ -544,7 +564,10 @@ async function connectSession(
   const catchUpQueue: string[] = []
 
   session.sock.ev.on('chats.upsert', async (chats) => {
+    const sample = chats.slice(0, 3).map((c: any) => ({ id: c.id, unreadCount: c.unreadCount }))
+    console.log(`[baileys] chats.upsert ${chats.length} chats, sample unreadCounts:`, JSON.stringify(sample))
     let anyNew = false
+    let anyUnreadSynced = false
     for (const chat of chats) {
       const jid = chat.id
       if (!jid) continue
@@ -590,15 +613,18 @@ async function connectSession(
           ? extractBodyFromRaw((chat as any).lastMessage)
           : null
         const isNewer = chatTs && (!existing.lastMessageAt || new Date(chatTs) > existing.lastMessageAt)
-        const needsUpdate = chatName && !existing.name || isNewer || (chatLastMsg && !existing.lastMessage)
+        const waUnread = (chat as any).unreadCount
+        const unreadUpdate = (waUnread != null) ? { unreadCount: Math.max(0, Number(waUnread)) } : {}
+        const needsUpdate = (chatName && !existing.name) || isNewer || (chatLastMsg && !existing.lastMessage) || waUnread != null
         if (needsUpdate) {
           db.update(schema.contacts).set({
             ...(chatName && !existing.name ? { name: chatName } : {}),
             ...(isNewer ? { lastMessageAt: new Date(chatTs!) } : {}),
-            // Fill in lastMessage only if we don't already have one
             ...(chatLastMsg && !existing.lastMessage ? { lastMessage: chatLastMsg } : {}),
+            ...unreadUpdate,
             updatedAt: new Date()
           }).where(eq(schema.contacts.whatsappId, jid)).run()
+          if (waUnread != null) anyUnreadSynced = true
         }
 
         // Gap detection: WA's timestamp is more than 2 min ahead of our latest stored message.
@@ -620,8 +646,29 @@ async function connectSession(
 
     if (anyNew) {
       await hydrateContactNames(db, win, session)
-      win.webContents.send('wa:historySynced', null)
       setTimeout(() => fetchProfilePictures(db, win, session), 2000)
+    }
+    if (anyNew || anyUnreadSynced) {
+      win.webContents.send('wa:historySynced', null)
+    }
+  })
+
+  // When user reads a chat on their phone or WA Web, WA pushes a chats.update
+  // with unreadCount=0. Sync that to our DB so badges stay accurate.
+  session.sock.ev.on('chats.update', (updates) => {
+    for (const update of updates) {
+      const jid = update.id
+      if (!jid) continue
+      if (update.unreadCount != null) {
+        const count = Math.max(0, Number(update.unreadCount))
+        db.update(schema.contacts)
+          .set({ unreadCount: count, updatedAt: new Date() })
+          .where(eq(schema.contacts.whatsappId, jid))
+          .run()
+        win.webContents.send('wa:contactUpserted',
+          db.select().from(schema.contacts).where(eq(schema.contacts.whatsappId, jid)).all()[0] ?? null
+        )
+      }
     }
   })
 
@@ -938,6 +985,7 @@ async function upsertMessage(
       .run()
   }
 
+  let isNewMessage = false
   try {
     db.insert(schema.messages).values({
       contactId: contact!.id,
@@ -951,9 +999,10 @@ async function upsertMessage(
       senderJid,
       createdAt: new Date()
     }).run()
-  } catch { /* duplicate */ }
+    isNewMessage = true
+  } catch { /* duplicate — message already in DB, skip */ }
 
-  return { contact: contact ?? null, isNew }
+  return { contact: contact ?? null, isNew, isNewMessage }
 }
 
 // ── Serialisation helpers ─────────────────────────────────────────────────────
@@ -969,7 +1018,8 @@ function extractBodyFromRaw(raw: any): string | undefined {
     (m.audioMessage   ? (m.audioMessage.ptt       ? '🎤 Nota de voz' : '🎵 Audio') : undefined) ??
     (m.documentMessage ? (m.documentMessage.fileName || '📄 Documento') : undefined) ??
     (m.stickerMessage ? '🎭 Sticker'   : undefined) ??
-    (m.locationMessage ? '📍 Ubicación' : undefined)
+    (m.locationMessage ? '📍 Ubicación' : undefined) ??
+    (m.reactionMessage ? `${m.reactionMessage.text ?? '👍'} (reacción)` : undefined)
   )
 }
 
@@ -1008,7 +1058,8 @@ function extractBody(msg: proto.IWebMessageInfo): string | undefined {
     (m.locationMessage  ? '📍 Ubicación'  : undefined) ??
     (m.pollCreationMessage ? `📊 ${m.pollCreationMessage.name ?? 'Encuesta'}` : undefined) ??
     (m.contactMessage   ? `👤 ${m.contactMessage.displayName ?? 'Contacto'}` : undefined) ??
-    (m.contactsArrayMessage ? `👥 ${m.contactsArrayMessage.contacts?.length ?? ''} contactos` : undefined)
+    (m.contactsArrayMessage ? `👥 ${m.contactsArrayMessage.contacts?.length ?? ''} contactos` : undefined) ??
+    (m.reactionMessage ? `${m.reactionMessage.text ?? '👍'} (reacción)` : undefined)
   )
 }
 

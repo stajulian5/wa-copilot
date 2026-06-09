@@ -88,6 +88,8 @@ export function MessageBubble({ message, highlight }: Props) {
           <a href={`https://maps.google.com/?q=${message.body}`} target="_blank" rel="noreferrer" className="text-blue-600 underline text-xs">
             📍 Ver en Maps
           </a>
+        ) : message.type === 'reaction' ? (
+          <p className="text-lg leading-none">{message.body?.replace(' (reacción)', '') ?? '👍'}</p>
         ) : message.type === 'poll' ? (
           <div className="text-xs text-gray-500 italic">📊 {message.body}</div>
         ) : message.type === 'sticker' ? (

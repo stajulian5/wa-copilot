@@ -62,13 +62,21 @@ if (existsSync(migrationsFolder)) {
 let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
+  const isWin = process.platform === 'win32'
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
     minWidth: 1024,
     minHeight: 700,
     title: 'WA Copilot',
-    titleBarStyle: 'hiddenInset',
+    // macOS: hide inset title bar so NavBar acts as drag region
+    // Windows: hide default frame, we render our own title bar in the UI
+    titleBarStyle: isWin ? 'hidden' : 'hiddenInset',
+    titleBarOverlay: isWin ? {
+      color: '#ffffff',
+      symbolColor: '#374151',
+      height: 48,
+    } : undefined,
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#1a1a1a' : '#ffffff',
     webPreferences: {
       preload: join(__dirname, '../preload/preload.js'),
@@ -204,16 +212,20 @@ ipcMain.handle('app:openExtensionInFinder', () => {
   shell.openPath(extensionDir)
 })
 
-// Open Chrome directly to the extensions management page
+// Open Chrome extensions page — platform-aware
 ipcMain.handle('app:openChromeExtensions', () => {
-  // macOS: `open -a "Google Chrome"` honours chrome:// URLs
   const { exec } = require('child_process')
-  exec('open -a "Google Chrome" "chrome://extensions/"', (err: any) => {
-    if (err) {
-      // Fallback: open browser to a plain help URL
-      shell.openExternal('https://support.google.com/chrome/answer/2664769')
-    }
-  })
+  if (process.platform === 'darwin') {
+    exec('open -a "Google Chrome" "chrome://extensions/"', (err: any) => {
+      if (err) shell.openExternal('https://support.google.com/chrome/answer/2664769')
+    })
+  } else if (process.platform === 'win32') {
+    exec('start chrome chrome://extensions/', (err: any) => {
+      if (err) shell.openExternal('https://support.google.com/chrome/answer/2664769')
+    })
+  } else {
+    shell.openExternal('https://support.google.com/chrome/answer/2664769')
+  }
 })
 
 // ─── Auto-updater ────────────────────────────────────────────────────────────
@@ -250,14 +262,9 @@ function setupAutoUpdater(win: BrowserWindow) {
   autoUpdater.on('update-downloaded', (info) => {
     console.log(`[updater] v${info.version} downloaded — source: ${updateSource}`)
 
-    if (updateSource === 'startup') {
-      // Startup: tell the renderer to show a "restart to update" banner
-      win.webContents.send('app:updateReady', { version: info.version })
-    } else {
-      // 24h scheduled: restart + relaunch automatically (silent=true, runAfter=true)
-      console.log('[updater] scheduled update — restarting automatically')
-      autoUpdater.quitAndInstall(true, true)
-    }
+    // Always auto-install: restart silently and relaunch immediately
+    console.log(`[updater] v${info.version} ready — restarting automatically (source: ${updateSource})`)
+    autoUpdater.quitAndInstall(true, true)
   })
 
   autoUpdater.on('error', (err) => {

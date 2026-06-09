@@ -692,7 +692,7 @@
 <section class="hero">
   <div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div>
   <div class="hero-inner">
-    <div class="hero-badge">✈️ Free · macOS · Open source</div>
+    <div class="hero-badge">✈️ Free · macOS &amp; Windows · Open source</div>
 
     <h1>
       Customer service<br/>through WhatsApp,<br/>
@@ -737,11 +737,11 @@
 
     <div class="hero-actions">
       <a class="btn-primary" id="install-btn" href="#" onclick="return startDownload()">
-        ⬇ Download for macOS — Free
+        ⬇ <span id="dl-btn-label">Download — Free</span>
       </a>
       <a class="btn-secondary" href="https://github.com/stajulian5/wa-copilot">View source ↗</a>
     </div>
-    <p class="hero-note">macOS 12+ · <span id="arch-hint">Apple Silicon &amp; Intel</span> · Opens a .dmg — drag to Applications</p>
+    <p class="hero-note" id="hero-note">macOS 12+ · <span id="arch-hint">Apple Silicon &amp; Intel</span> · Opens a .dmg — drag to Applications</p>
   </div>
 </section>
 
@@ -1182,7 +1182,7 @@
       <div class="steps-list">
         <div class="step">
           <div class="step-num">1</div>
-          <div><h3>Download &amp; install</h3><p>Open the .dmg, drag WA Copilot to Applications, and launch it. macOS verifies it automatically — no warnings.</p></div>
+          <div><h3>Download &amp; install</h3><p>macOS: open the .dmg, drag to Applications, launch. Windows: run the installer, click through — done. No warnings.</p></div>
         </div>
         <div class="step">
           <div class="step-num">2</div>
@@ -1191,6 +1191,14 @@
         <div class="step">
           <div class="step-num">3</div>
           <div><h3>Your conversations appear automatically</h3><p>WA Copilot syncs your history and organizes it in the pipeline. Start managing relationships from minute one.</p></div>
+        </div>
+        <div class="step">
+          <div class="step-num" style="background:#f0fdf4;color:#16a34a;border:1.5px solid #bbf7d0;">4</div>
+          <div>
+            <h3>Install the Chrome extension <span style="font-size:11px;font-weight:600;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:2px 7px;border-radius:99px;margin-left:6px;">Optional</span></h3>
+            <p>Adds two things: <strong>contact name sync</strong> (pulls real names from WhatsApp Web) and a <strong>message backup</strong> safety net that catches anything the main connection misses. Works on Chrome and Edge, Mac and Windows.</p>
+            <p style="margin-top:6px;font-size:12px;color:#6b7280;">The app works perfectly without it — install only if you want extra reliability.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -1267,16 +1275,35 @@
       <p>Enter your email to download. We'll send you updates and give you early access when new features launch — no spam, unsubscribe any time.</p>
       <div class="am-form">
         <input class="am-input" id="am-email" type="email" placeholder="you@company.com" autocomplete="email" />
-        <button class="am-submit" id="am-submit-btn" onclick="submitAccess()">Get free access &amp; download →</button>
+        <button class="am-submit" id="am-submit-btn" onclick="submitAccess()">Get free access →</button>
       </div>
       <p id="am-error" style="color:#dc2626;font-size:12px;margin-top:8px;display:none;"></p>
     </div>
 
-    <!-- Step 2: Success + key display -->
+    <!-- Step 2: Platform picker -->
+    <div id="am-platform-view" style="display:none;">
+      <div class="am-icon">💻</div>
+      <h3>Choose your platform</h3>
+      <p id="am-platform-detected" style="font-size:13px;color:#6b7280;margin-bottom:16px;"></p>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="am-submit" id="btn-mac-silicon" onclick="downloadPlatform('mac-silicon')">
+          🍎 macOS — Apple Silicon (M1/M2/M3/M4)
+        </button>
+        <button class="am-submit" id="btn-mac-intel" onclick="downloadPlatform('mac-intel')" style="background:#374151;">
+          🍎 macOS — Intel Mac
+        </button>
+        <button class="am-submit" id="btn-win" onclick="downloadPlatform('win')" style="background:#1d4ed8;">
+          🪟 Windows (64-bit)
+        </button>
+      </div>
+      <p style="font-size:11px;color:#9ca3af;margin-top:14px;">Not sure? Mac bought after 2020 → Apple Silicon. Windows → blue button.</p>
+    </div>
+
+    <!-- Step 3: Success + key display -->
     <div id="am-success-view" style="display:none;">
       <div class="am-icon">🎉</div>
       <h3>Your download is starting!</h3>
-      <p>Save this license key — you'll need it if you reinstall  WA Copilot.</p>
+      <p>Save this license key — you'll need it if you reinstall WA Copilot.</p>
       <div class="am-key-box" id="am-key-display" onclick="copyKey()" title="Click to copy"></div>
       <p class="am-key-note">Click to copy · Also sent to your email</p>
       <button class="am-submit" style="margin-top:20px;" onclick="closeModal()">Done</button>
@@ -1288,50 +1315,66 @@
 <div id="mobile-warning">
   <div class="mw-box">
     <div class="mw-icon">🖥️</div>
-    <h3>WA Copilot is for Mac</h3>
-    <p>This app runs on macOS 12 or above. Open this page on your Mac to download it.</p>
+    <h3>WA Copilot is a desktop app</h3>
+    <p>Open this page on your Mac or Windows PC to download it.</p>
     <button class="mw-close">Got it</button>
   </div>
 </div>
 
 <script>
   // ── Config ────────────────────────────────────────────────────────────────
-  const BASE      = 'https://github.com/stajulian5/wa-copilot/releases/latest/download/';
-  const ARM_DMG   = BASE + 'WA-Copilot-0.3.1-arm64.dmg';
-  const INTEL_DMG = BASE + 'WA-Copilot-0.3.1.dmg';
-  // Point this to your Vercel deployment once deployed:
-  const API_URL   = 'https://script.google.com/macros/s/AKfycbxWZpECQg5Gp-9RPmDzsOB3SihdPLMoLi8AHT3FfqrLCuvfrDvEf7hoMDqlEpqooRrZRw/exec';
+  const BASE         = 'https://github.com/stajulian5/wa-copilot/releases/latest/download/';
+  const ARM_DMG      = BASE + 'WA-Copilot-0.3.1-arm64.dmg';
+  const INTEL_DMG    = BASE + 'WA-Copilot-0.3.1.dmg';
+  const WIN_EXE      = BASE + 'WA-Copilot-0.3.1-Setup.exe';
+  const API_URL      = 'https://script.google.com/macros/s/AKfycbxWZpECQg5Gp-9RPmDzsOB3SihdPLMoLi8AHT3FfqrLCuvfrDvEf7hoMDqlEpqooRrZRw/exec';
 
   // ── Device detection ──────────────────────────────────────────────────────
   const isAppleSilicon = () => /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
   const isMac          = () => /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
+  const isWindows      = () => /Win/.test(navigator.userAgent);
   const isMobile       = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const dmgUrl         = () => isAppleSilicon() ? ARM_DMG : INTEL_DMG;
 
-  // Update arch hint on load
+  const PLATFORM_URLS = {
+    'mac-silicon': ARM_DMG,
+    'mac-intel':   INTEL_DMG,
+    'win':         WIN_EXE,
+  };
+
+  let _savedKey = '';
+
+  // ── Update hero button & note on load ─────────────────────────────────────
   window.addEventListener('DOMContentLoaded', () => {
+    const btn  = document.getElementById('dl-btn-label');
+    const note = document.getElementById('hero-note');
     const hint = document.getElementById('arch-hint');
-    if (hint && isMac()) hint.textContent = isAppleSilicon() ? 'Apple Silicon (M1/M2/M3/M4)' : 'Intel Mac';
-  });
 
-  // ── Download trigger ──────────────────────────────────────────────────────
-  function triggerDownload() {
-    window.location.href = dmgUrl();
-  }
+    if (isWindows()) {
+      if (btn)  btn.textContent  = 'Download for Windows — Free';
+      if (note) note.textContent = 'Windows 10/11 · 64-bit · Runs as a desktop app';
+    } else if (isMac()) {
+      const chip = isAppleSilicon() ? 'Apple Silicon (M1/M2/M3/M4)' : 'Intel Mac';
+      if (btn)  btn.textContent = `Download for macOS — Free`;
+      if (hint) hint.textContent = chip;
+    }
+
+    document.getElementById('am-email')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') submitAccess();
+    });
+  });
 
   // ── Main download button ──────────────────────────────────────────────────
   function startDownload() {
-    if (isMobile() || !isMac()) {
+    if (isMobile()) {
       document.getElementById('mobile-warning').classList.add('show');
       return false;
     }
-    // Show email gate
     document.getElementById('access-modal').classList.add('show');
     setTimeout(() => document.getElementById('am-email').focus(), 100);
     return false;
   }
 
-  // ── Email form submission ─────────────────────────────────────────────────
+  // ── Email form submission → show platform picker ──────────────────────────
   async function submitAccess() {
     const email = document.getElementById('am-email').value.trim();
     const errEl = document.getElementById('am-error');
@@ -1345,29 +1388,47 @@
 
     const btn = document.getElementById('am-submit-btn');
     btn.disabled = true;
-    btn.textContent = 'Setting up your access…';
+    btn.textContent = 'One sec…';
 
-    // Generate license key client-side (Google Apps Script uses no-cors redirects
-    // so we can't read the response — the sheet still gets the row)
+    // Generate license key
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const seg = n => Array.from({length:n}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
-    const key = `CP-${seg(4)}-${seg(4)}-${seg(4)}`;
+    _savedKey = `CP-${seg(4)}-${seg(4)}-${seg(4)}`;
 
-    // Fire-and-forget to Google Sheet — no-cors because Apps Script redirects
+    // Log to Google Sheet
     fetch(API_URL, {
-      method: 'POST',
-      mode: 'no-cors',
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, source: 'landing', arch: isAppleSilicon() ? 'arm64' : 'x64', key })
+      body: JSON.stringify({ email, source: 'landing', key: _savedKey })
     }).catch(() => {});
 
-    // Trigger download
-    triggerDownload();
+    // Move to platform picker
+    document.getElementById('am-form-view').style.display     = 'none';
+    document.getElementById('am-platform-view').style.display = 'block';
 
-    // Show success with the generated key
-    document.getElementById('am-form-view').style.display    = 'none';
-    document.getElementById('am-success-view').style.display = 'block';
-    document.getElementById('am-key-display').textContent    = key;
+    // Highlight detected platform
+    const detected = document.getElementById('am-platform-detected');
+    if (isWindows()) {
+      detected.textContent = '🪟 We detected Windows on your device.';
+      document.getElementById('btn-win').style.outline = '2px solid #1d4ed8';
+    } else if (isMac()) {
+      const chip = isAppleSilicon() ? 'Apple Silicon' : 'Intel';
+      detected.textContent = `🍎 We detected macOS (${chip}) on your device.`;
+      const el = isAppleSilicon() ? 'btn-mac-silicon' : 'btn-mac-intel';
+      document.getElementById(el).style.outline = '2px solid #25D366';
+    } else {
+      detected.textContent = 'Choose your platform below:';
+    }
+  }
+
+  // ── Platform chosen → trigger download → show success ────────────────────
+  function downloadPlatform(platform) {
+    const url = PLATFORM_URLS[platform];
+    if (url) window.location.href = url;
+
+    document.getElementById('am-platform-view').style.display = 'none';
+    document.getElementById('am-success-view').style.display  = 'block';
+    document.getElementById('am-key-display').textContent     = _savedKey;
   }
 
   function copyKey() {
@@ -1380,12 +1441,12 @@
 
   function closeModal() {
     document.getElementById('access-modal').classList.remove('show');
-    // Reset form for next time
-    document.getElementById('am-form-view').style.display    = 'block';
-    document.getElementById('am-success-view').style.display = 'none';
+    document.getElementById('am-form-view').style.display     = 'block';
+    document.getElementById('am-platform-view').style.display = 'none';
+    document.getElementById('am-success-view').style.display  = 'none';
     document.getElementById('am-email').value = '';
     document.getElementById('am-submit-btn').disabled = false;
-    document.getElementById('am-submit-btn').textContent = 'Get free access & download →';
+    document.getElementById('am-submit-btn').textContent = 'Get free access →';
     document.getElementById('am-error').style.display = 'none';
   }
 
@@ -1393,16 +1454,8 @@
   document.querySelector('.mw-close').addEventListener('click', () =>
     document.getElementById('mobile-warning').classList.remove('show'));
 
-  // Close modals on backdrop click
   document.getElementById('access-modal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeModal();
-  });
-
-  // Enter key submits the email form
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('am-email')?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') submitAccess();
-    });
   });
 </script>
 </body>

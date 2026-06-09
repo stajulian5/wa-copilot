@@ -9,9 +9,11 @@ import { KanbanColumn } from '../components/KanbanColumn'
 import { ContactCardContent } from '../components/ContactCard'
 import { CardContextMenu } from '../components/CardContextMenu'
 import { EscalateModal } from '../components/EscalateModal'
+import { SnoozeModal } from '../components/SnoozeModal'
 import { ChatPanel } from '../components/ChatPanel'
 import { DailyBriefing } from '../components/DailyBriefing'
 import { NavBar } from '../components/NavBar'
+import { StatsBar } from '../components/StatsBar'
 import type { Contact, Account } from '../../server/db/schema'
 
 const STAGES: { key: Contact['stage']; label: string; emoji: string }[] = [
@@ -45,6 +47,7 @@ export function KanbanPage({ waStatus, accounts, activeAccountId, lastSyncAt, on
   const [activeContact, setActiveContact] = useState<Contact | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; contactId: number } | null>(null)
   const [escalateContactId, setEscalateContactId] = useState<number | null>(null)
+  const [snoozeContactId, setSnoozeContactId] = useState<number | null>(null)
   const [syncingContactId, setSyncingContactId] = useState<number | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const port = window.api?.serverPort ?? 3847
@@ -158,6 +161,8 @@ export function KanbanPage({ waStatus, accounts, activeAccountId, lastSyncAt, on
         lastSyncAt={lastSyncAt}
       />
 
+      <StatsBar />
+
       {showBriefing && <DailyBriefing onClose={() => setShowBriefing(false)} />}
 
       {/* Sync banner: shown when few contacts, prompting full history import */}
@@ -236,6 +241,11 @@ export function KanbanPage({ waStatus, accounts, activeAccountId, lastSyncAt, on
               onClick: () => syncContactAvatar(contextMenu.contactId)
             },
             {
+              icon: '🔔',
+              label: 'Set reminder',
+              onClick: () => setSnoozeContactId(contextMenu.contactId)
+            },
+            {
               icon: '⚡',
               label: 'Escalate conversation',
               onClick: () => setEscalateContactId(contextMenu.contactId)
@@ -249,6 +259,14 @@ export function KanbanPage({ waStatus, accounts, activeAccountId, lastSyncAt, on
         <EscalateModal
           contactId={escalateContactId}
           onClose={() => setEscalateContactId(null)}
+        />
+      )}
+
+      {/* Reminder / snooze modal */}
+      {snoozeContactId !== null && (
+        <SnoozeModal
+          contactId={snoozeContactId}
+          onClose={() => setSnoozeContactId(null)}
         />
       )}
     </div>

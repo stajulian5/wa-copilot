@@ -53,6 +53,20 @@ dmg:
       path: /Applications
   iconSize: 100
 
+# ── Windows ────────────────────────────────────────────────────────────────────
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.png
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: WA Copilot
+  runAfterFinish: true
+
 publish:
   provider: github
   owner: stajulian5
