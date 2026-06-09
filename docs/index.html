@@ -1388,7 +1388,15 @@
   const API_URL      = 'https://script.google.com/macros/s/AKfycbxWZpECQg5Gp-9RPmDzsOB3SihdPLMoLi8AHT3FfqrLCuvfrDvEf7hoMDqlEpqooRrZRw/exec';
 
   // ── Device detection ──────────────────────────────────────────────────────
-  const isAppleSilicon = () => /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
+  // Apple Silicon detection via userAgentData (Chrome/Edge) — falls back to assuming
+  // Apple Silicon for all Macs since M1 (2020) now covers the vast majority of active users.
+  const isAppleSilicon = () => {
+    try {
+      const plat = (navigator.userAgentData?.platform || '').toLowerCase();
+      if (plat === 'macos' || plat === 'mac os') return true;
+    } catch {}
+    return isMac(); // default to Apple Silicon for any Mac
+  };
   const isMac          = () => /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
   const isWindows      = () => /Win/.test(navigator.userAgent);
   const isMobile       = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
