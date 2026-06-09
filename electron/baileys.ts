@@ -360,7 +360,19 @@ async function connectSession(
   session.status = 'connecting'
   if (session.accountId === activeAccountId) broadcastStatus(win)
 
-  const { version } = await fetchLatestBaileysVersion()
+  // fetchLatestBaileysVersion() does an unbounded network call to GitHub — on a
+  // restricted/slow network it can hang forever, blocking makeWASocket() and
+  // leaving the QR screen stuck on "Connecting...". Race it against a timeout
+  // and fall back to the version bundled with the package.
+  const { version } = await Promise.race([
+    fetchLatestBaileysVersion(),
+    new Promise<{ version: [number, number, number] }>((resolve) =>
+      setTimeout(() => {
+        console.log(`[baileys][account ${session.accountId}] fetchLatestBaileysVersion timed out — using bundled version`)
+        resolve({ version: require('@whiskeysockets/baileys/lib/Defaults/baileys-version.json').version })
+      }, 5000)
+    )
+  ])
   const authPath = join(userData, session.authDir)
   if (!existsSync(authPath)) mkdirSync(authPath, { recursive: true })
   const { state, saveCreds } = await useMultiFileAuthState(authPath)
