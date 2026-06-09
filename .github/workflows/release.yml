@@ -25,14 +25,16 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run package
+        run: npm run package -- --publish never
 
       - name: Upload Mac artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mac-dist
-          path: dist/*.dmg
+          path: |
+            dist/*.dmg
+            dist/*.blockmap
+            dist/latest-mac.yml
 
   build-win:
     runs-on: windows-latest
@@ -52,15 +54,16 @@ jobs:
           npm_config_arch: x64
 
       - name: Build & package (Windows)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run package:win
+        run: npm run package:win -- --publish never
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: win-dist
-          path: dist/*.exe
+          path: |
+            dist/*.exe
+            dist/*.blockmap
+            dist/latest.yml
 
   release:
     needs: [build-mac, build-win]
