@@ -16,7 +16,7 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm ci
+      - run: npm install
 
       - name: Build & package (Mac)
         env:
@@ -44,7 +44,7 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm ci
+      - run: npm install
 
       - name: Rebuild native modules for Electron
         run: npx electron-rebuild
