@@ -1408,12 +1408,8 @@
     const note = document.getElementById('hero-note');
     const hint = document.getElementById('arch-hint');
 
-    if (isWindows()) {
-      if (btn)  btn.textContent  = 'Download for Windows — Free';
-      if (note) note.textContent = 'Windows 10/11 · 64-bit · Runs as a desktop app';
-    } else if (isMac()) {
+    if (isMac()) {
       const chip = isAppleSilicon() ? 'Apple Silicon (M1/M2/M3/M4)' : 'Intel Mac';
-      if (btn)  btn.textContent = `Download for macOS — Free`;
       if (hint) hint.textContent = chip;
     }
 
