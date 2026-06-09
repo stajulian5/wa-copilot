@@ -741,7 +741,7 @@
       </a>
       <a class="btn-secondary" href="https://github.com/stajulian5/wa-copilot">View source ↗</a>
     </div>
-    <p class="hero-note" id="hero-note">macOS 12+ · <span id="arch-hint">Apple Silicon &amp; Intel</span> · Opens a .dmg — drag to Applications</p>
+    <p class="hero-note" id="hero-note">macOS 12+ · <span id="arch-hint">Apple Silicon &amp; Intel</span> · Windows 10/11 · Free</p>
   </div>
 </section>
 
@@ -845,11 +845,11 @@
       <span class="qf-link">See pipeline →</span>
     </a>
 
-    <a class="qf-card" href="#setup">
-      <div class="qf-icon">🔔</div>
-      <h3>Snooze &amp; reminders</h3>
-      <p>Defer a conversation and it resurfaces at exactly the right moment.</p>
-      <span class="qf-link">See setup →</span>
+    <a class="qf-card highlight" href="#stats">
+      <div class="qf-icon">📊</div>
+      <h3>Live stats bar</h3>
+      <p>Unanswered, avg response time, oldest wait, resolved today — updated every minute for KAMs and managers.</p>
+      <span class="qf-link">See stats →</span>
     </a>
 
   </div>
@@ -884,6 +884,7 @@
       <p>KAMs handling large portfolios over WhatsApp need more than a chat list. WA Copilot gives you a structured view of every relationship — who's active, who needs a follow-up, and who's ready to close.</p>
       <ul class="for-list">
         <li>Visual pipeline shows every account's current stage</li>
+        <li>Live stats bar: unanswered, avg response, oldest wait — refreshes every minute</li>
         <li>Client replies automatically reopen resolved conversations</li>
         <li>Snooze and follow up at exactly the right moment</li>
         <li>AI suggestions in your voice for faster, better outreach</li>
@@ -1170,6 +1171,64 @@
     </div>
   </div>
 </div>
+<!-- ── Feature 6: Stats bar ── -->
+<hr class="showcase-divider" />
+<div class="showcase flip" id="stats">
+  <div class="showcase-text">
+    <div class="eyebrow">Live stats</div>
+    <h2>Know exactly how your team is performing — right now.</h2>
+    <p>A live stats bar at the top of the pipeline gives KAMs and managers instant visibility into what's happening: who's waiting, how fast you're responding, and how many cases closed today.</p>
+    <ul>
+      <li>Unanswered conversations highlighted in red when overdue</li>
+      <li>7-day average response time so you can spot trends</li>
+      <li>Oldest unanswered message — catch the ones that slipped</li>
+      <li>Resolved today and new today for end-of-day reporting</li>
+      <li>Refreshes automatically every minute — no manual refresh</li>
+    </ul>
+  </div>
+  <div>
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:20px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.12),0 4px 16px rgba(0,0,0,.06);">
+      <!-- Stats bar mockup -->
+      <div style="background:#f2f2f2;border-bottom:1px solid #e8e8e8;padding:10px 14px;display:flex;align-items:center;gap:6px;">
+        <div class="tb-dot tb-r"></div><div class="tb-dot tb-y"></div><div class="tb-dot tb-g"></div>
+        <div class="tb-title">✈️ WA Copilot — Pipeline</div>
+      </div>
+      <div style="padding:14px 16px;background:#f9f8f5;display:flex;flex-wrap:wrap;gap:8px;">
+        <!-- Red pill: unanswered -->
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:999px;padding:6px 14px;font-size:11px;font-weight:700;color:#dc2626;display:flex;align-items:center;gap:6px;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#dc2626;display:inline-block;"></span>
+          5 unanswered
+        </div>
+        <!-- Normal pills -->
+        <div style="background:#fff;border:1px solid #e8e8e8;border-radius:999px;padding:6px 14px;font-size:11px;font-weight:600;color:#374151;">⏱ Avg reply 8m</div>
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:999px;padding:6px 14px;font-size:11px;font-weight:700;color:#dc2626;">🕐 Oldest 3h 14m</div>
+        <div style="background:#fff;border:1px solid #e8e8e8;border-radius:999px;padding:6px 14px;font-size:11px;font-weight:600;color:#374151;">💬 12 open</div>
+        <div style="background:#fff;border:1px solid #e8e8e8;border-radius:999px;padding:6px 14px;font-size:11px;font-weight:600;color:#374151;">⏳ 4 waiting</div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:999px;padding:6px 14px;font-size:11px;font-weight:700;color:#166534;">✅ 9 resolved today</div>
+        <div style="background:#fff;border:1px solid #e8e8e8;border-radius:999px;padding:6px 14px;font-size:11px;font-weight:600;color:#374151;">🆕 7 new today</div>
+      </div>
+      <!-- Mini kanban below -->
+      <div style="display:flex;gap:8px;padding:0 16px 14px;background:#f9f8f5;">
+        <div style="flex:1;background:#fff;border:1px solid #ebebeb;border-radius:10px;padding:10px;">
+          <div style="font-size:9px;font-weight:800;color:#777;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px;">🆕 New · 5</div>
+          <div style="background:#f9f8f5;border:1px solid #ebebeb;border-radius:7px;padding:7px;margin-bottom:5px;"><div style="font-size:10px;font-weight:700;">Sarah M.</div><div style="font-size:9px;color:#999;">Any update on…</div></div>
+          <div style="background:#f9f8f5;border:1px solid #ebebeb;border-radius:7px;padding:7px;"><div style="font-size:10px;font-weight:700;">Carlos V.</div><div style="font-size:9px;color:#999;">I have a question…</div></div>
+        </div>
+        <div style="flex:1;background:#fff;border:1px solid #ebebeb;border-radius:10px;padding:10px;">
+          <div style="font-size:9px;font-weight:800;color:#777;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px;">💬 Open · 12</div>
+          <div style="background:#f9f8f5;border:1px solid #ebebeb;border-radius:7px;padding:7px;margin-bottom:5px;"><div style="font-size:10px;font-weight:700;">Ana R.</div><div style="font-size:9px;color:#999;">Contract sent ✓</div></div>
+          <div style="background:#f9f8f5;border:1px solid #ebebeb;border-radius:7px;padding:7px;"><div style="font-size:10px;font-weight:700;">Peter L.</div><div style="font-size:9px;color:#999;">Following up…</div></div>
+        </div>
+        <div style="flex:1;background:#fff;border:1px solid #ebebeb;border-radius:10px;padding:10px;">
+          <div style="font-size:9px;font-weight:800;color:#777;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px;">✅ Done · 9</div>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;padding:7px;margin-bottom:5px;"><div style="font-size:10px;font-weight:700;color:#166534;">Luis H.</div><div style="font-size:9px;color:#4ade80;">Resolved ✓</div></div>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;padding:7px;"><div style="font-size:10px;font-weight:700;color:#166534;">Sofia V.</div><div style="font-size:9px;color:#4ade80;">Resolved ✓</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <hr class="showcase-divider" />
 
 <!-- Setup -->
@@ -1230,13 +1289,13 @@
   <div class="privacy-section" style="padding:0">
     <div>
       <div class="section-eyebrow">Privacy</div>
-      <h2>Your conversations never leave your Mac.</h2>
-      <p>There is no WA Copilot backend. Your messages travel from WhatsApp directly to your screen — without passing through any external server.</p>
+      <h2>Your conversations never leave your computer.</h2>
+      <p>There is no WA Copilot backend. Your messages travel from WhatsApp directly to your screen — without passing through any external server. Works the same on Mac and Windows.</p>
       <p style="margin-top:8px"><a href="https://github.com/stajulian5/wa-copilot" style="color:var(--accent-text);text-decoration:none;font-weight:600;">Read the full source code →</a></p>
     </div>
     <div class="privacy-grid">
-      <div class="privacy-card"><div class="pc-icon">💾</div><div><div class="pc-title">Local SQLite database</div><div class="pc-text">All your messages and contacts are stored on your Mac. You control the backup.</div></div></div>
-      <div class="privacy-card"><div class="pc-icon">📂</div><div><div class="pc-title">WhatsApp session on disk</div><div class="pc-text">Your WhatsApp session lives in the app's local folder — on your Mac only, protected by macOS file permissions.</div></div></div>
+      <div class="privacy-card"><div class="pc-icon">💾</div><div><div class="pc-title">Local SQLite database</div><div class="pc-text">All your messages and contacts are stored on your computer. You control the backup.</div></div></div>
+      <div class="privacy-card"><div class="pc-icon">📂</div><div><div class="pc-title">WhatsApp session on disk</div><div class="pc-text">Your WhatsApp session lives in the app's local folder — on your device only, protected by OS file permissions.</div></div></div>
       <div class="privacy-card"><div class="pc-icon">🚫</div><div><div class="pc-title">No third-party servers</div><div class="pc-text">Your Mac talks directly to WhatsApp. No data passes through anyone else's infrastructure.</div></div></div>
       <div class="privacy-card"><div class="pc-icon">👁</div><div><div class="pc-title">100% open source</div><div class="pc-text">Every line of code is on GitHub. Verify exactly what runs on your computer.</div></div></div>
     </div>
@@ -1252,7 +1311,7 @@
     <a class="btn-cta" id="cta-btn" href="#" onclick="return startDownload()">
       ⬇ Download WA Copilot — Free
     </a>
-    <p class="cta-note">macOS 12+ · Apple Silicon &amp; Intel · <a href="https://github.com/stajulian5/wa-copilot">Open source ↗</a></p>
+    <p class="cta-note">macOS 12+ · Apple Silicon &amp; Intel · Windows 10/11 · <a href="https://github.com/stajulian5/wa-copilot">Open source ↗</a></p>
   </div>
 </div>
 
