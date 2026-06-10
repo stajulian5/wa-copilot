@@ -36,6 +36,7 @@ declare global {
       notify: (title: string, body: string) => Promise<void>
       setBadge: (count: number) => Promise<void>
       getUserDataPath: () => Promise<string>
+      getAppVersion: () => Promise<string>
 
       // Keychain
       getApiKey: () => Promise<string | null>

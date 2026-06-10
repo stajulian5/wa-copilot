@@ -104,6 +104,9 @@ export const api = {
   restartAndInstall: () => ipcRenderer.invoke('app:restartAndInstall'),
   openReleasePage: (url: string) => ipcRenderer.invoke('app:openReleasePage', url),
 
+  // App version (shown in Settings)
+  getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion'),
+
   // Chrome extension helpers
   getExtensionPath: () => ipcRenderer.invoke('app:getExtensionPath'),
   openExtensionInFinder: () => ipcRenderer.invoke('app:openExtensionInFinder'),

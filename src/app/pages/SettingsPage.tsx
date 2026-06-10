@@ -29,6 +29,7 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
   const [googleLastSync, setGoogleLastSync] = useState<string | null>(null)
   const [googleSyncing, setGoogleSyncing] = useState(false)
   const [googleConnecting, setGoogleConnecting] = useState(false)
+  const [appVersion, setAppVersion] = useState('')
 
   useEffect(() => {
     window.api.getApiKey().then((k: string | null) => { if (k) setApiKey(k) })
@@ -45,6 +46,8 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
       setGoogleConnected(s.connected)
       setGoogleLastSync(s.lastSync)
     })
+
+    window.api.getAppVersion().then(setAppVersion)
 
     // Listen for OAuth completion (browser redirects back → Express → IPC)
     const off = window.api.onGoogleAuthComplete(() => {
@@ -382,6 +385,11 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
           </button>
         </section>
 
+
+        {/* Version */}
+        <div className="text-center text-xs text-gray-300 pt-4 pb-2">
+          WA Copilot {appVersion ? `v${appVersion}` : ''}
+        </div>
 
       </div>
     </div>

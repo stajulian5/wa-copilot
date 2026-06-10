@@ -88,7 +88,7 @@ wa-copilot/
 │       ├── db/          # Drizzle ORM + SQLite migrations
 │       ├── routes/      # Express REST API
 │       └── services/    # AI, Google Sheets, sync
-├── chrome-extension/    # Optional: sync contact names from WA Web
+├── WA Copilot - Sync Contacts/    # Optional: sync contact names from WA Web
 └── electron-builder.yml
 ```
 
@@ -108,9 +108,9 @@ All data is stored locally in `~/Library/Application Support/WA Copilot/crm.sqli
 
 ## Optional: Chrome extension
 
-The `chrome-extension/` folder contains a small browser extension that syncs contact names from WhatsApp Web into Copilot.
+The `WA Copilot - Sync Contacts/` folder contains a small browser extension that syncs contact names from WhatsApp Web into Copilot.
 
-To install: Chrome → `chrome://extensions` → **Load unpacked** → select the `chrome-extension/` folder.
+To install: Chrome → `chrome://extensions` → **Load unpacked** → select the `WA Copilot - Sync Contacts/` folder.
 
 ---
 

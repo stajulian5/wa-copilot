@@ -198,12 +198,14 @@ ipcMain.handle('app:pickFile', async () => {
 
 // ─── Chrome extension helpers ─────────────────────────────────────────────────
 
-// Return the bundled chrome-extension folder path.
-// In packaged app: inside .app/Contents/Resources/chrome-extension
-// In dev: project root chrome-extension/
+// Return the bundled "WA Copilot - Sync Contacts" extension folder path.
+// In packaged app: inside .app/Contents/Resources/WA Copilot - Sync Contacts
+// In dev: project root "WA Copilot - Sync Contacts/"
 const extensionDir = app.isPackaged
-  ? join(process.resourcesPath, 'chrome-extension')
-  : join(__dirname, '../../chrome-extension')
+  ? join(process.resourcesPath, 'WA Copilot - Sync Contacts')
+  : join(__dirname, '../../WA Copilot - Sync Contacts')
+
+ipcMain.handle('app:getVersion', () => app.getVersion())
 
 ipcMain.handle('app:getExtensionPath', () => extensionDir)
 

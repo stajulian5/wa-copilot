@@ -11,8 +11,8 @@ files:
 
 # Bundle the Chrome extension inside the .app so the path is always valid
 extraResources:
-  - from: chrome-extension/
-    to: chrome-extension/
+  - from: WA Copilot - Sync Contacts/
+    to: WA Copilot - Sync Contacts/
     filter:
       - "**/*"
 
