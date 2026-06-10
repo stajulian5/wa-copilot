@@ -478,15 +478,6 @@
     .am-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
     .am-success { display: none; }
     .am-success.show { display: block; }
-    .am-key-box {
-      background: var(--accent-light); border: 1.5px solid #a7f3c4;
-      border-radius: 10px; padding: 12px 16px; font-family: monospace;
-      font-size: 16px; font-weight: 700; color: var(--accent-text);
-      letter-spacing: .08em; margin: 16px 0; cursor: pointer;
-      transition: background .15s;
-    }
-    .am-key-box:hover { background: #dcfce7; }
-    .am-key-note { font-size: 11px; color: var(--muted); }
 
     /* ─── Footer ────────────────────────────────────────────────────────────── */
     footer {
@@ -1357,13 +1348,11 @@
       <p style="font-size:11px;color:#9ca3af;margin-top:14px;">Not sure? Mac bought after 2020 → Apple Silicon. Windows → blue button.</p>
     </div>
 
-    <!-- Step 3: Success + key display -->
+    <!-- Step 3: Success -->
     <div id="am-success-view" style="display:none;">
       <div class="am-icon">🎉</div>
       <h3>Your download is starting!</h3>
-      <p>Save this license key — you'll need it if you reinstall WA Copilot.</p>
-      <div class="am-key-box" id="am-key-display" onclick="copyKey()" title="Click to copy"></div>
-      <p class="am-key-note">Click to copy · Also sent to your email</p>
+      <p>Open the downloaded file to install WA Copilot.</p>
       <button class="am-submit" style="margin-top:20px;" onclick="closeModal()">Done</button>
     </div>
   </div>
@@ -1406,8 +1395,6 @@
     'mac-intel':   INTEL_DMG,
     'win':         WIN_EXE,
   };
-
-  let _savedKey = '';
 
   // ── Update hero button & note on load ─────────────────────────────────────
   window.addEventListener('DOMContentLoaded', () => {
@@ -1452,16 +1439,11 @@
     btn.disabled = true;
     btn.textContent = 'One sec…';
 
-    // Generate license key
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    const seg = n => Array.from({length:n}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
-    _savedKey = `CP-${seg(4)}-${seg(4)}-${seg(4)}`;
-
     // Log to Google Sheet
     fetch(API_URL, {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, source: 'landing', key: _savedKey })
+      body: JSON.stringify({ email, source: 'landing' })
     }).catch(() => {});
 
     // Move to platform picker
@@ -1497,15 +1479,6 @@
 
     document.getElementById('am-platform-view').style.display = 'none';
     document.getElementById('am-success-view').style.display  = 'block';
-    document.getElementById('am-key-display').textContent     = _savedKey;
-  }
-
-  function copyKey() {
-    const key = document.getElementById('am-key-display').textContent;
-    navigator.clipboard.writeText(key).then(() => {
-      document.getElementById('am-key-display').textContent = '✓ Copied!';
-      setTimeout(() => { document.getElementById('am-key-display').textContent = key; }, 1500);
-    });
   }
 
   function closeModal() {

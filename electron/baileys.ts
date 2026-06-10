@@ -413,6 +413,11 @@ async function connectSession(
     browser: ['WA Copilot', 'Chrome', '1.0.0'],
     markOnlineOnConnect: false,
     syncFullHistory: true,
+    // Don't let a stuck TCP/TLS handshake hang forever — if WhatsApp's
+    // servers are unreachable (firewall/VPN/restricted network), fail fast
+    // so the close handler below can retry instead of leaving the QR
+    // screen stuck on "Connecting..." indefinitely.
+    connectTimeoutMs: 20_000,
     // Required for Baileys to re-decrypt messages during history sync
     getMessage: async (key) => {
       if (!key.id) return undefined
@@ -428,6 +433,15 @@ async function connectSession(
   session.sock.ev.on('creds.update', saveCreds)
 
   session.sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
+    // Log every transition so a stuck "Connecting…" screen is diagnosable from
+    // the user's logs (e.g. via `npm run dev` console or app log file).
+    if (connection || lastDisconnect) {
+      console.log(
+        `[baileys][account ${session.accountId}] connection.update — connection=${connection ?? 'undefined'}` +
+        (lastDisconnect?.error ? ` error=${(lastDisconnect.error as Error).message}` : '')
+      )
+    }
+
     if (qr) {
       console.log(`[baileys][account ${session.accountId}] QR generated`)
       win.webContents.send('wa:qr', { qr, accountId: session.accountId })

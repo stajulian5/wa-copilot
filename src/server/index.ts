@@ -13,6 +13,7 @@ import { settingsRouter } from './routes/settings'
 import { remindersRouter } from './routes/reminders'
 import { googleContactsRouter } from './routes/googleContacts'
 import { statsRouter } from './routes/stats'
+import { kanbanColumnsRouter } from './routes/kanbanColumns'
 
 import { EventEmitter } from 'events'
 export const serverEvents = new EventEmitter()
@@ -86,6 +87,7 @@ export async function startServer(db: BetterSQLite3Database<typeof schema>, user
   app.use('/reminders', remindersRouter)
   app.use('/', googleContactsRouter)
   app.use('/stats', statsRouter)
+  app.use('/kanban-columns', kanbanColumnsRouter)
 
   const server = createServer(app)
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSettingsStore } from '../stores/settingsStore'
 import type { ToneAttribute } from '../stores/settingsStore'
+import { KanbanColumnsEditor } from '../components/KanbanColumnsEditor'
 
 interface Props {
   onBack: () => void
@@ -255,6 +256,9 @@ export function SettingsPage({ onBack, onStartRelink }: Props) {
             </button>
           </div>
         </section>
+
+        {/* Kanban Columns */}
+        <KanbanColumnsEditor />
 
         {/* Google Contacts */}
         <section className="mb-8 border-t border-gray-100 pt-8">

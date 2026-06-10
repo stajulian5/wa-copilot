@@ -5,6 +5,7 @@ import {
   PointerSensor, useSensor, useSensors
 } from '@dnd-kit/core'
 import { useContactsStore } from '../stores/contactsStore'
+import { useKanbanColumnsStore } from '../stores/kanbanColumnsStore'
 import { KanbanColumn } from '../components/KanbanColumn'
 import { ContactCardContent } from '../components/ContactCard'
 import { CardContextMenu } from '../components/CardContextMenu'
@@ -15,15 +16,6 @@ import { DailyBriefing } from '../components/DailyBriefing'
 import { NavBar } from '../components/NavBar'
 import { StatsBar } from '../components/StatsBar'
 import type { Contact, Account } from '../../server/db/schema'
-
-const STAGES: { key: Contact['stage']; label: string; emoji: string }[] = [
-  { key: 'new', label: 'New', emoji: '🆕' },
-  { key: 'open_conversation', label: 'Open Conversation', emoji: '💬' },
-  { key: 'waiting_for', label: 'Waiting For', emoji: '⏳' },
-  { key: 'all_resolved', label: 'All Resolved', emoji: '✅' }
-]
-
-const STAGE_KEYS: Contact['stage'][] = ['new', 'open_conversation', 'waiting_for', 'all_resolved']
 
 interface Props {
   waStatus: string
@@ -51,6 +43,11 @@ export function KanbanPage({ waStatus, accounts, activeAccountId, lastSyncAt, on
   const [syncingContactId, setSyncingContactId] = useState<number | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const port = window.api?.serverPort ?? 3847
+  const { columns, fetchColumns } = useKanbanColumnsStore()
+
+  useEffect(() => {
+    fetchColumns()
+  }, [])
 
   // Show daily briefing once per day
   useEffect(() => {
@@ -114,7 +111,7 @@ export function KanbanPage({ waStatus, accounts, activeAccountId, lastSyncAt, on
     const draggedContact = useContactsStore.getState().contacts.find(c => c.id === contactId)
     if (!draggedContact) return
 
-    if (STAGE_KEYS.includes(over.id as Contact['stage'])) {
+    if (columns.some(c => c.key === over.id)) {
       // Dropped directly on a column (not on a card)
       const newStage = over.id as Contact['stage']
       if (newStage === draggedContact.stage) return
@@ -194,12 +191,12 @@ export function KanbanPage({ waStatus, accounts, activeAccountId, lastSyncAt, on
         onDragEnd={handleDragEnd}
       >
         <div className="flex flex-1 gap-3 p-3 overflow-hidden">
-          {STAGES.map((stage, idx) => (
+          {columns.map((col, idx) => (
             <KanbanColumn
-              key={stage.key}
-              stage={stage.key}
-              label={`${stage.emoji} ${stage.label}`}
-              contacts={getByStage(stage.key)}
+              key={col.key}
+              stage={col.key}
+              label={col.label}
+              contacts={getByStage(col.key)}
               columnIndex={idx + 1}
               onSelectContact={setSelectedContactId}
               onContactContextMenu={handleCardContextMenu}

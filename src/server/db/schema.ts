@@ -25,8 +25,8 @@ export const contacts = sqliteTable('contacts', {
   isGroup: integer('is_group', { mode: 'boolean' }).notNull().default(false),
   participantCount: integer('participant_count'), // for group chats
 
-  // Pipeline
-  stage: text('stage', { enum: ['new', 'open_conversation', 'waiting_for', 'all_resolved'] })
+  // Pipeline — references kanbanColumns.key (custom columns supported)
+  stage: text('stage')
     .notNull()
     .default('new'),
   stageChangedAt: integer('stage_changed_at', { mode: 'timestamp_ms' }),
@@ -99,7 +99,7 @@ export const reminders = sqliteTable('reminders', {
   dueAt: integer('due_at', { mode: 'timestamp_ms' }).notNull(),
   note: text('note'),
   // Stage the contact was in when the reminder was created — restored when it fires
-  previousStage: text('previous_stage', { enum: ['new', 'open_conversation', 'waiting_for', 'all_resolved'] }),
+  previousStage: text('previous_stage'),
   isDone: integer('is_done', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date())
 })
@@ -110,6 +110,19 @@ export const templates = sqliteTable('templates', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   title: text('title').notNull(),
   body: text('body').notNull(), // may contain {{name}}
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date())
+})
+
+// ─── kanban_columns ────────────────────────────────────────────────────────────
+// User-configurable Kanban columns. `key` is the stable identifier stored on
+// contacts.stage and reminders.previous_stage — renaming a column only changes
+// `label`, never `key`, so existing contacts stay in place.
+
+export const kanbanColumns = sqliteTable('kanban_columns', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  key: text('key').notNull().unique(),
+  label: text('label').notNull(),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date())
 })
@@ -142,5 +155,7 @@ export type Message = typeof messages.$inferSelect
 export type InsertMessage = typeof messages.$inferInsert
 export type Reminder = typeof reminders.$inferSelect
 export type InsertReminder = typeof reminders.$inferInsert
+export type KanbanColumnRow = typeof kanbanColumns.$inferSelect
+export type InsertKanbanColumn = typeof kanbanColumns.$inferInsert
 export type Template = typeof templates.$inferSelect
 export type Setting = typeof settings.$inferSelect

@@ -36,6 +36,13 @@
       "when": 1781122887171,
       "tag": "0004_graceful_puma",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1781130453637,
+      "tag": "0005_black_klaw",
+      "breakpoints": true
     }
   ]
 }

@@ -18,6 +18,7 @@ export function OnboardingPage({ waStatus, initialQr, onQRReceived, onComplete, 
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [showExpired, setShowExpired] = useState(false)
   const [extensionPath, setExtensionPath] = useState<string>('')
+  const [stuck, setStuck] = useState(false)
 
   useEffect(() => {
     if (initialQr) renderQR(initialQr)
@@ -31,6 +32,25 @@ export function OnboardingPage({ waStatus, initialQr, onQRReceived, onComplete, 
     })
     return off
   }, [])
+
+  // If we're stuck on "Connecting…" with no QR for too long, the WebSocket
+  // connection to WhatsApp's servers is likely being blocked (firewall/VPN/
+  // restrictive network) — surface troubleshooting tips + a retry button.
+  useEffect(() => {
+    if (step !== 'qr' || qrDataUrl) {
+      setStuck(false)
+      return
+    }
+    const timer = setTimeout(() => setStuck(true), 25_000)
+    return () => clearTimeout(timer)
+  }, [step, qrDataUrl, waStatus])
+
+  function retryConnection() {
+    setStuck(false)
+    setQrDataUrl(null)
+    setShowExpired(false)
+    window.api.resetWAAuth?.()
+  }
 
   useEffect(() => {
     if (waStatus === 'connected') {
@@ -75,7 +95,7 @@ export function OnboardingPage({ waStatus, initialQr, onQRReceived, onComplete, 
 
       <div className="flex-1 flex items-center justify-center py-14 px-4">
         {step === 'welcome'   && <WelcomeStep   onNext={() => setStep('qr')} />}
-        {step === 'qr'        && <QRStep qrDataUrl={qrDataUrl} showExpired={showExpired} waStatus={waStatus} isRelink={isRelink} />}
+        {step === 'qr'        && <QRStep qrDataUrl={qrDataUrl} showExpired={showExpired} waStatus={waStatus} isRelink={isRelink} stuck={stuck} onRetry={retryConnection} />}
         {step === 'extension' && <ExtensionStep extensionPath={extensionPath} onDone={finishOnboarding} />}
       </div>
     </div>
@@ -105,9 +125,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
 
       {/* Logo */}
       <div className="flex flex-col items-center gap-4">
-        <div className="w-24 h-24 rounded-[28px] bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center shadow-2xl shadow-green-200">
-          <span className="text-5xl">✈️</span>
-        </div>
+        <img src="/icon.png" alt="WA Copilot" className="w-24 h-24 rounded-[28px] shadow-2xl shadow-green-200" />
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">WA Copilot</h1>
           <p className="text-gray-400 mt-1">Your WhatsApp assistant for client teams</p>
@@ -148,11 +166,13 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
 
 // ── Step 2: QR Scan ───────────────────────────────────────────────────────────
 
-function QRStep({ qrDataUrl, showExpired, waStatus, isRelink }: {
+function QRStep({ qrDataUrl, showExpired, waStatus, isRelink, stuck, onRetry }: {
   qrDataUrl: string | null
   showExpired: boolean
   waStatus: string
   isRelink?: boolean
+  stuck?: boolean
+  onRetry?: () => void
 }) {
   return (
     <div className="flex flex-col items-center gap-5 w-full max-w-sm text-center">
@@ -180,6 +200,21 @@ function QRStep({ qrDataUrl, showExpired, waStatus, isRelink }: {
               <span className="text-3xl animate-spin">🔄</span>
               <p className="text-sm font-medium text-gray-600">Code expired</p>
               <p className="text-xs text-gray-400">Generating a new one…</p>
+            </div>
+          ) : stuck ? (
+            <div className="flex flex-col items-center gap-2 p-4">
+              <span className="text-3xl">📡</span>
+              <p className="text-sm font-medium text-gray-700">Taking longer than usual</p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                This can happen on a restricted Wi-Fi, VPN, or firewall that blocks WhatsApp's servers.
+                Try a different network (e.g. your phone's hotspot) or check your firewall settings.
+              </p>
+              <button
+                onClick={onRetry}
+                className="mt-1 px-4 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-lg transition-colors"
+              >
+                Try again
+              </button>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3">
