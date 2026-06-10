@@ -8,11 +8,13 @@ declare global {
       getWAStatus: () => Promise<'disconnected' | 'connecting' | 'connected'>
       sendMessage: (jid: string, text: string) => Promise<string | undefined>
       sendMedia: (jid: string, mediaPath: string, caption?: string) => Promise<unknown>
+      sendReaction: (jid: string, whatsappMsgId: string, emoji: string) => Promise<Record<string, string> | null>
 
       // Events (return cleanup function)
       onWAStatus: (cb: (status: string) => void) => () => void
       onNewMessage: (cb: (msg: unknown) => void) => () => void
       onMessageUpdate: (cb: (update: unknown) => void) => () => void
+      onReactionUpdate: (cb: (payload: { whatsappMsgId: string; reactions: Record<string, string> | null }) => void) => () => void
       onQR: (cb: (payload: { qr: string; accountId: number }) => void) => () => void
       onContactUpserted: (cb: (contact: Contact) => void) => () => void
       onHistorySynced: (cb: () => void) => () => void

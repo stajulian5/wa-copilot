@@ -1,10 +1,20 @@
+import { useState } from 'react'
 import { format } from 'date-fns'
 import type { Message } from '../../server/db/schema'
 
 interface Props {
   message: Message
   highlight?: string   // search term to highlight in message body
+  jid: string          // chat jid, needed to send reactions
 }
+
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
+const EMOJI_GRID = [
+  '👍', '❤️', '😂', '😮', '😢', '🙏',
+  '🔥', '🎉', '👏', '😍', '😘', '🥰',
+  '😊', '😎', '🤔', '😡', '😱', '👌',
+  '✌️', '🙌', '💯', '✅', '❌', '⭐'
+]
 
 const statusIcon = (status: Message['status']) => {
   switch (status) {
@@ -31,9 +41,11 @@ function HighlightedText({ text, term }: { text: string; term?: string }) {
   )
 }
 
-export function MessageBubble({ message, highlight }: Props) {
+export function MessageBubble({ message, highlight, jid }: Props) {
   const isOut = message.direction === 'out'
   const time = format(new Date(message.timestamp), 'HH:mm')
+  const [showToolbar, setShowToolbar] = useState(false)
+  const [showPicker, setShowPicker] = useState(false)
 
   if (message.type === 'reaction') {
     return (
@@ -41,6 +53,25 @@ export function MessageBubble({ message, highlight }: Props) {
         <span className="text-lg">{message.reactionEmoji}</span>
       </div>
     )
+  }
+
+  // Reactions added ON this message (JSON map of reactorJid|'me' -> emoji)
+  let reactionsMap: Record<string, string> | null = null
+  try { reactionsMap = message.reactions ? JSON.parse(message.reactions) : null } catch {}
+  const myReaction = reactionsMap?.['me']
+  const reactionCounts: Record<string, number> = {}
+  if (reactionsMap) {
+    for (const emoji of Object.values(reactionsMap)) {
+      reactionCounts[emoji] = (reactionCounts[emoji] ?? 0) + 1
+    }
+  }
+  const hasReactions = Object.keys(reactionCounts).length > 0
+
+  const sendReaction = (emoji: string) => {
+    const next = myReaction === emoji ? '' : emoji
+    window.api.sendReaction(jid, message.whatsappMsgId, next)
+    setShowPicker(false)
+    setShowToolbar(false)
   }
 
   return (
@@ -51,7 +82,53 @@ export function MessageBubble({ message, highlight }: Props) {
           {message.senderName}
         </p>
       )}
-      <div className={`flex ${isOut ? 'justify-end' : 'justify-start'} w-full`}>
+      <div
+        className={`flex ${isOut ? 'justify-end' : 'justify-start'} w-full relative`}
+        onMouseEnter={() => setShowToolbar(true)}
+        onMouseLeave={() => { setShowToolbar(false); setShowPicker(false) }}
+      >
+        {/* Quick-reaction toolbar (shown on hover) */}
+        {showToolbar && !message.isDeleted && message.type !== 'reaction' && (
+          <div
+            className={`absolute -top-9 ${isOut ? 'right-0' : 'left-0'} z-10 flex items-center gap-0.5 bg-white rounded-full shadow-md border border-gray-100 px-1.5 py-1`}
+          >
+            {QUICK_REACTIONS.map(emoji => (
+              <button
+                key={emoji}
+                onClick={() => sendReaction(emoji)}
+                title="Reaccionar"
+                className={`text-base leading-none hover:scale-125 transition-transform px-0.5 ${myReaction === emoji ? 'scale-125' : ''}`}
+              >
+                {emoji}
+              </button>
+            ))}
+            <button
+              onClick={() => setShowPicker(p => !p)}
+              title="Más emojis"
+              className="text-gray-400 hover:text-gray-600 text-sm px-1 leading-none"
+            >
+              ➕
+            </button>
+          </div>
+        )}
+
+        {/* Full emoji picker grid */}
+        {showPicker && (
+          <div
+            className={`absolute -top-[11.5rem] ${isOut ? 'right-0' : 'left-0'} z-20 grid grid-cols-6 gap-1 bg-white rounded-lg shadow-lg border border-gray-100 p-2 w-52`}
+          >
+            {EMOJI_GRID.map(emoji => (
+              <button
+                key={emoji}
+                onClick={() => sendReaction(emoji)}
+                className="text-lg leading-none hover:bg-gray-100 rounded p-1"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
+
       <div
         className={`selectable max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
           isOut ? 'bg-wa-light text-gray-900 rounded-br-sm' : 'bg-white text-gray-900 rounded-bl-sm border border-gray-100'
@@ -110,6 +187,24 @@ export function MessageBubble({ message, highlight }: Props) {
         </div>
       </div>
       </div>
+
+      {/* Reaction pills */}
+      {hasReactions && (
+        <div className={`flex flex-wrap gap-1 mt-0.5 ${isOut ? 'mr-1 justify-end' : 'ml-1 justify-start'}`}>
+          {Object.entries(reactionCounts).map(([emoji, count]) => (
+            <button
+              key={emoji}
+              onClick={() => sendReaction(emoji)}
+              className={`flex items-center gap-0.5 text-xs rounded-full px-1.5 py-0.5 border shadow-sm ${
+                myReaction === emoji ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-gray-200'
+              }`}
+            >
+              <span className="leading-none">{emoji}</span>
+              {count > 1 && <span className="text-gray-500 leading-none">{count}</span>}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

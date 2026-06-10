@@ -58,9 +58,11 @@ export function KanbanColumn({ stage, label, contacts, onSelectContact, onContac
   const prevCountRef = useRef(contacts.length)
   const columnRef = useRef<HTMLDivElement>(null)
 
-  // Pick a stable puppy for this column (rotates daily)
+  // Pick a stable puppy for this column (rotates daily, based on local date)
   const offset = COLUMN_PHOTO_OFFSET[stage] ?? 0
-  const photoId = PUPPY_PHOTOS[(Math.floor(Date.now() / 86400000) + offset) % PUPPY_PHOTOS.length]
+  const today = new Date()
+  const dayIndex = Math.floor(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) / 86400000)
+  const photoId = PUPPY_PHOTOS[(dayIndex + offset) % PUPPY_PHOTOS.length]
   const photoUrl = `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=400&q=80`
 
   const [showCelebration, setShowCelebration] = useState(false)

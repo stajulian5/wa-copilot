@@ -136,6 +136,9 @@ export function ChatPanel({ contactId, onClose }: Props) {
     }
     fetch(`http://127.0.0.1:${PORT()}/contacts/${contactId}/read`, { method: 'POST' })
     updateContact(contactId, { unreadCount: 0 })
+
+    // Focus the message input so the user can start typing immediately
+    inputRef.current?.focus()
   }, [contactId])
 
   // Scroll to bottom on new messages
@@ -180,7 +183,7 @@ export function ChatPanel({ contactId, onClose }: Props) {
       timestamp: now, status: 'pending',
       isEdited: false, isDeleted: false,
       mediaUrl: null, mediaFilename: null, mediaMimetype: null, mediaSize: null,
-      reactionEmoji: null, quotedMsgId: null,
+      reactionEmoji: null, reactions: null, quotedMsgId: null,
       senderName: null, senderJid: null, sentByManagerId: null,
       createdAt: now, ...extraProps
     } as Message)
@@ -376,7 +379,7 @@ export function ChatPanel({ contactId, onClose }: Props) {
               ? messages.filter(m => m.body?.toLowerCase().includes(searchTerm.toLowerCase()))
               : messages
             ).map(msg => (
-              <MessageBubble key={msg.whatsappMsgId} message={msg} highlight={searchTerm || undefined} />
+              <MessageBubble key={msg.whatsappMsgId} message={msg} highlight={searchTerm || undefined} jid={contact.whatsappId} />
             ))}
             {searchTerm && messages.filter(m => m.body?.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
               <div className="flex items-center justify-center text-sm text-gray-400 py-8">

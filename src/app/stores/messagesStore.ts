@@ -11,6 +11,7 @@ interface MessagesState {
   upsertMessage: (contactId: number, msg: Message) => void
   updateMessageStatus: (whatsappMsgId: string, status: Message['status']) => void
   markDeleted: (whatsappMsgId: string) => void
+  setReactions: (whatsappMsgId: string, reactions: Record<string, string> | null) => void
   resolveOptimistic: (tempId: string, realId: string) => void
   setLoading: (contactId: number | null) => void
 }
@@ -63,6 +64,21 @@ export const useMessagesStore = create<MessagesState>((set) => ({
           const updated = [...msgs]
           updated[idx] = { ...updated[idx], isDeleted: true, body: null }
           next[Number(cid)] = updated
+        }
+      }
+      return { byContact: next }
+    }),
+
+  setReactions: (whatsappMsgId, reactions) =>
+    set((s) => {
+      const next = { ...s.byContact }
+      for (const [cid, msgs] of Object.entries(next)) {
+        const idx = msgs.findIndex((m) => m.whatsappMsgId === whatsappMsgId)
+        if (idx !== -1) {
+          const updated = [...msgs]
+          updated[idx] = { ...updated[idx], reactions: reactions ? JSON.stringify(reactions) : null }
+          next[Number(cid)] = updated
+          break
         }
       }
       return { byContact: next }

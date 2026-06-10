@@ -80,6 +80,7 @@ export const messages = sqliteTable('messages', {
   isEdited: integer('is_edited', { mode: 'boolean' }).notNull().default(false),
   isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
   reactionEmoji: text('reaction_emoji'), // for reaction-type messages
+  reactions: text('reactions'),         // JSON map of reactorJid ('me' for us) -> emoji, for reactions ON this message
   quotedMsgId: text('quoted_msg_id'),   // message this replies to
   senderName: text('sender_name'),      // for group messages: display name of the individual sender
   senderJid: text('sender_jid'),        // for group messages: WA JID of the individual sender (key.participant)
@@ -97,6 +98,8 @@ export const reminders = sqliteTable('reminders', {
   contactId: integer('contact_id').notNull().references(() => contacts.id),
   dueAt: integer('due_at', { mode: 'timestamp_ms' }).notNull(),
   note: text('note'),
+  // Stage the contact was in when the reminder was created — restored when it fires
+  previousStage: text('previous_stage', { enum: ['new', 'open_conversation', 'waiting_for', 'all_resolved'] }),
   isDone: integer('is_done', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date())
 })

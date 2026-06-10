@@ -14,6 +14,8 @@ export const api = {
   sendMessage: (jid: string, text: string) => ipcRenderer.invoke('wa:sendMessage', jid, text),
   sendMedia: (jid: string, mediaPath: string, caption?: string) =>
     ipcRenderer.invoke('wa:sendMedia', jid, mediaPath, caption),
+  sendReaction: (jid: string, whatsappMsgId: string, emoji: string) =>
+    ipcRenderer.invoke('wa:sendReaction', jid, whatsappMsgId, emoji),
 
   // Events from main → renderer
   onWAStatus: (cb: (status: string) => void) => {
@@ -30,6 +32,11 @@ export const api = {
     const h = (_e: any, u: unknown) => cb(u)
     ipcRenderer.on('wa:messageUpdate', h)
     return () => ipcRenderer.removeListener('wa:messageUpdate', h)
+  },
+  onReactionUpdate: (cb: (payload: { whatsappMsgId: string; reactions: Record<string, string> | null }) => void) => {
+    const h = (_e: any, payload: { whatsappMsgId: string; reactions: Record<string, string> | null }) => cb(payload)
+    ipcRenderer.on('wa:reactionUpdate', h)
+    return () => ipcRenderer.removeListener('wa:reactionUpdate', h)
   },
   onQR: (cb: (payload: { qr: string; accountId: number }) => void) => {
     const h = (_e: any, payload: { qr: string; accountId: number }) => cb(payload)

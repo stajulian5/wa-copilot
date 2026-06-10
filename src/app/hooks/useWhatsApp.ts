@@ -9,7 +9,7 @@ type WAStatus = 'disconnected' | 'connecting' | 'connected'
 
 export function useWhatsApp(setStatus: (s: WAStatus) => void, onMessage?: () => void) {
   const { upsertContact, setContacts } = useContactsStore()
-  const { upsertMessage, updateMessageStatus, markDeleted } = useMessagesStore()
+  const { upsertMessage, updateMessageStatus, markDeleted, setReactions } = useMessagesStore()
 
   useEffect(() => {
     const offStatus = window.api.onWAStatus((status: string) => {
@@ -69,6 +69,7 @@ export function useWhatsApp(setStatus: (s: WAStatus) => void, onMessage?: () => 
         mediaMimetype: null,
         mediaSize: null,
         reactionEmoji: null,
+        reactions: null,
         quotedMsgId: null,
         senderName: raw.senderName ?? null,
         senderJid: raw.senderJid ?? null,
@@ -98,11 +99,16 @@ export function useWhatsApp(setStatus: (s: WAStatus) => void, onMessage?: () => 
       }
     })
 
+    const offReaction = window.api.onReactionUpdate(({ whatsappMsgId, reactions }) => {
+      setReactions(whatsappMsgId, reactions)
+    })
+
     return () => {
       offStatus()
       offMsg()
       offContactUpserted()
       offUpdate()
+      offReaction()
     }
   }, []) // no dependency on contacts — reads from store directly
 }

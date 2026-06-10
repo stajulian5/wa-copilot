@@ -29,12 +29,17 @@ remindersRouter.get('/due', (req, res) => {
 
 // POST /reminders
 remindersRouter.post('/', (req, res) => {
-  const { contactId, dueAt, note } = req.body
+  const { contactId, dueAt, note, previousStage } = req.body
   if (!contactId || !dueAt) return res.status(400).json({ error: 'contactId and dueAt required' })
 
   const result = db(req)
     .insert(schema.reminders)
-    .values({ contactId: Number(contactId), dueAt: new Date(dueAt), note: note ?? null })
+    .values({
+      contactId: Number(contactId),
+      dueAt: new Date(dueAt),
+      note: note ?? null,
+      previousStage: previousStage ?? null
+    })
     .returning()
     .all()
   res.json(result[0])

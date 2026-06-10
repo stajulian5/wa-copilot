@@ -1,0 +1,1 @@
+ALTER TABLE `reminders` ADD `previous_stage` text;

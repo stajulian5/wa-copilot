@@ -3,10 +3,12 @@ import { useRemindersStore } from '../stores/remindersStore'
 import { useContactsStore } from '../stores/contactsStore'
 import type { Reminder } from '../../server/db/schema'
 
+const PORT = () => window.api?.serverPort ?? 3847
+
 // Polls active reminders every 30 seconds and fires when due
 export function useSnooze() {
   const { reminders, markDone } = useRemindersStore()
-  const { contacts, setSelectedContactId } = useContactsStore()
+  const { contacts, setSelectedContactId, updateContact } = useContactsStore()
   const firedRef = useRef<Set<number>>(new Set())
 
   useEffect(() => {
@@ -18,7 +20,7 @@ export function useSnooze() {
         if (new Date(reminder.dueAt).getTime() > now) continue
 
         firedRef.current.add(reminder.id)
-        fireReminder(reminder, contacts, setSelectedContactId, markDone)
+        fireReminder(reminder, contacts, setSelectedContactId, updateContact, markDone)
       }
     }
 
@@ -32,11 +34,23 @@ function fireReminder(
   reminder: Reminder,
   contacts: any[],
   setSelectedContactId: (id: number) => void,
+  updateContact: (id: number, patch: any) => void,
   markDone: (id: number) => void
 ) {
   const contact = contacts.find((c) => c.id === reminder.contactId)
   const name = contact?.name ?? contact?.phone ?? 'Contacto'
   const note = reminder.note ?? 'Recordatorio'
+
+  // Move the conversation back to the column it was snoozed from
+  if (reminder.previousStage && contact?.stage === 'waiting_for') {
+    const stageChangedAt = new Date()
+    updateContact(reminder.contactId, { stage: reminder.previousStage, stageChangedAt })
+    fetch(`http://127.0.0.1:${PORT()}/contacts/${reminder.contactId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stage: reminder.previousStage, stageChangedAt })
+    }).catch(() => {})
+  }
 
   // OS notification
   window.api.notify(name, note)
@@ -48,6 +62,9 @@ function fireReminder(
   }, () => {
     markDone(reminder.id)
   })
+
+  // Persist done state on the server too
+  fetch(`http://127.0.0.1:${PORT()}/reminders/${reminder.id}/done`, { method: 'PATCH' }).catch(() => {})
 }
 
 function showSnoozeToast(

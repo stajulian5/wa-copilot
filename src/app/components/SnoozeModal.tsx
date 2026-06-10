@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useRemindersStore } from '../stores/remindersStore'
+import { useContactsStore } from '../stores/contactsStore'
 
 const PORT = () => window.api?.serverPort ?? 3847
 
@@ -38,16 +39,34 @@ export function SnoozeModal({ contactId, onClose }: Props) {
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
   const { addReminder } = useRemindersStore()
+  const { contacts, updateContact } = useContactsStore()
 
   const save = async (dueAt: Date) => {
     setSaving(true)
+    const contact = contacts.find(c => c.id === contactId)
+    // Remember where the conversation came from so we can move it back
+    // when the reminder fires — but only if it isn't already "Waiting for"
+    const previousStage = contact && contact.stage !== 'waiting_for' ? contact.stage : null
+
     const r = await fetch(`http://127.0.0.1:${PORT()}/reminders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contactId, dueAt: dueAt.toISOString(), note: note.trim() || null })
+      body: JSON.stringify({ contactId, dueAt: dueAt.toISOString(), note: note.trim() || null, previousStage })
     })
     const reminder = await r.json()
     addReminder(reminder)
+
+    // Move the conversation to "Waiting for" until the reminder fires
+    if (previousStage) {
+      const stageChangedAt = new Date()
+      updateContact(contactId, { stage: 'waiting_for', stageChangedAt })
+      fetch(`http://127.0.0.1:${PORT()}/contacts/${contactId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage: 'waiting_for', stageChangedAt })
+      }).catch(() => {})
+    }
+
     setSaving(false)
     onClose()
   }

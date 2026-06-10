@@ -1,6 +1,6 @@
 {
   "name": "wa-copilot",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "WA Copilot — KAM Assistant",
   "main": "out/main/index.js",
   "author": "Mica",

@@ -289,6 +289,32 @@ export async function startBaileys(
     return result?.key?.id
   })
 
+  ipcMain.handle('wa:sendReaction', async (_e, jid: string, whatsappMsgId: string, emoji: string) => {
+    const session = sessions.get(activeAccountId)
+    if (!session?.sock) throw new Error('WA not connected')
+
+    const [msg] = db.select({ direction: schema.messages.direction, senderJid: schema.messages.senderJid })
+      .from(schema.messages)
+      .where(eq(schema.messages.whatsappMsgId, whatsappMsgId))
+      .all()
+    if (!msg) throw new Error('Message not found')
+
+    const fromMe = msg.direction === 'out'
+    const key = {
+      remoteJid: jid,
+      id: whatsappMsgId,
+      fromMe,
+      ...(jid.endsWith('@g.us') && !fromMe && msg.senderJid ? { participant: msg.senderJid } : {})
+    }
+
+    await session.sock.sendMessage(jid, { react: { text: emoji, key } })
+
+    // Persist + broadcast — own reaction may not echo back via messages.reaction
+    const reactions = setReaction(db, whatsappMsgId, 'me', emoji)
+    win.webContents.send('wa:reactionUpdate', { whatsappMsgId, reactions })
+    return reactions
+  })
+
   ipcMain.handle('wa:sendMedia', async (_e, jid: string, mediaPath: string, caption?: string) => {
     const session = sessions.get(activeAccountId)
     if (!session?.sock) throw new Error('WA not connected')
@@ -538,7 +564,15 @@ async function connectSession(
 
   session.sock.ev.on('messages.reaction', async (reactions) => {
     for (const { key, reaction } of reactions) {
-      win.webContents.send('wa:messageUpdate', { key, reaction })
+      if (!key.id) continue
+      // reaction.key identifies who sent the reaction (the wrapper message's key).
+      // reaction.text === '' means the reaction was removed.
+      const reactorKey = reaction.key
+      const reactorJid = reactorKey?.fromMe
+        ? 'me'
+        : (reactorKey?.participant ?? reactorKey?.remoteJid ?? 'unknown')
+      const updated = setReaction(db, key.id, reactorJid, reaction.text || null)
+      win.webContents.send('wa:reactionUpdate', { whatsappMsgId: key.id, reactions: updated })
     }
   })
 
@@ -795,6 +829,42 @@ async function catchUpMissingMessages(
   }
 
   console.log(`[baileys][account ${session.accountId}] catch-up: sent ${fetched} history requests`)
+}
+
+// ── Reactions ─────────────────────────────────────────────────────────────────
+// Reactions are stored as a JSON map of reactorJid ('me' for the linked account)
+// -> emoji on the target message row. Setting emoji to null/empty removes that
+// reactor's entry (mirrors WhatsApp's "tap again to remove" behavior).
+// Returns the updated map (or null if empty / message not found).
+
+function setReaction(
+  db: BetterSQLite3Database<typeof schema>,
+  whatsappMsgId: string,
+  reactorJid: string,
+  emoji: string | null
+): Record<string, string> | null {
+  const [row] = db.select({ reactions: schema.messages.reactions })
+    .from(schema.messages)
+    .where(eq(schema.messages.whatsappMsgId, whatsappMsgId))
+    .all()
+  if (!row) return null
+
+  let map: Record<string, string> = {}
+  try { if (row.reactions) map = JSON.parse(row.reactions) } catch {}
+
+  if (emoji) {
+    map[reactorJid] = emoji
+  } else {
+    delete map[reactorJid]
+  }
+
+  const next = Object.keys(map).length > 0 ? JSON.stringify(map) : null
+  db.update(schema.messages)
+    .set({ reactions: next })
+    .where(eq(schema.messages.whatsappMsgId, whatsappMsgId))
+    .run()
+
+  return next ? map : null
 }
 
 // ── Contact name upsert ───────────────────────────────────────────────────────
