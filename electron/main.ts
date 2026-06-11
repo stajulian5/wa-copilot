@@ -47,7 +47,12 @@ sqlite.pragma('foreign_keys = ON')
 
 export const db = drizzle(sqlite, { schema })
 
-const migrationsFolder = join(__dirname, '../../src/server/db/migrations')
+// In dev, `src/` exists alongside the build output. In a packaged app, `src/`
+// is not bundled — migrations are copied to `process.resourcesPath/migrations`
+// via electron-builder's `extraResources` instead.
+const migrationsFolder = app.isPackaged
+  ? join(process.resourcesPath, 'migrations')
+  : join(__dirname, '../../src/server/db/migrations')
 if (existsSync(migrationsFolder)) {
   // Disable FK enforcement before migrate so Drizzle's internal transaction can
   // DROP and recreate tables that are referenced by other tables (e.g. contacts → messages).
@@ -55,6 +60,8 @@ if (existsSync(migrationsFolder)) {
   sqlite.pragma('foreign_keys = OFF')
   migrate(db, { migrationsFolder })
   sqlite.pragma('foreign_keys = ON')
+} else {
+  console.error(`[db] migrations folder not found at ${migrationsFolder} — schema may be out of date`)
 }
 
 // ─── Window ───────────────────────────────────────────────────────────────────

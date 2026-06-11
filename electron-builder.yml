@@ -15,6 +15,13 @@ extraResources:
     to: WA Copilot - Sync Contacts/
     filter:
       - "**/*"
+  # Bundle DB migrations — `src/` is not part of `files`, so without this
+  # drizzle's migrate() can't find the migrations folder in production and
+  # silently never runs (existsSync check fails).
+  - from: src/server/db/migrations
+    to: migrations
+    filter:
+      - "**/*"
 
 # ── macOS ──────────────────────────────────────────────────────────────────────
 mac:
