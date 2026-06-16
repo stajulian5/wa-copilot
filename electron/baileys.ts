@@ -9,7 +9,7 @@ import {
 import { BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { rmSync, existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, gte } from 'drizzle-orm'
 import * as schema from '../src/server/db/schema'
 import { userData } from './main'
 import { waMessenger } from '../src/server/waMessenger'
@@ -506,7 +506,7 @@ async function connectSession(
 
       setTimeout(() => hydrateContactNames(db, win, session), 3000)
       setTimeout(() => fetchProfilePictures(db, win, session), 6000)
-      setTimeout(() => catchUpMissingMessages(session, db, win, catchUpQueue), 10_000)
+      setTimeout(() => catchUpMissingMessages(session, db, win), 30_000)
     }
 
     if (connection === 'close') {
@@ -620,9 +620,6 @@ async function connectSession(
     if (updated) win.webContents.send('wa:historySynced', null)
   })
 
-  // JIDs that need a catch-up history fetch (detected in chats.upsert, fired below)
-  const catchUpQueue: string[] = []
-
   session.sock.ev.on('chats.upsert', async (chats) => {
     const sample = chats.slice(0, 3).map((c: any) => ({ id: c.id, unreadCount: c.unreadCount }))
     console.log(`[baileys] chats.upsert ${chats.length} chats, sample unreadCounts:`, JSON.stringify(sample))
@@ -662,8 +659,6 @@ async function connectSession(
           updatedAt: new Date()
         }).run()
         anyNew = true
-        // New contact with a recent timestamp — fetch their messages too
-        if (lastTs > Date.now() - 30 * 24 * 60 * 60 * 1000) catchUpQueue.push(jid)
       } else {
         const chatTs = (chat as any).conversationTimestamp
           ? Number((chat as any).conversationTimestamp) * 1000
@@ -687,20 +682,6 @@ async function connectSession(
           if (waUnread != null) anyUnreadSynced = true
         }
 
-        // Gap detection: WA's timestamp is more than 2 min ahead of our latest stored message.
-        // This means messages arrived while we were offline. Queue a catch-up history fetch.
-        if (chatTs) {
-          const [latestMsg] = db.select({ timestamp: schema.messages.timestamp })
-            .from(schema.messages)
-            .where(eq(schema.messages.contactId, existing.id))
-            .orderBy(desc(schema.messages.timestamp))
-            .limit(1)
-            .all()
-          const ourLatest = latestMsg?.timestamp?.getTime() ?? 0
-          if (chatTs - ourLatest > 2 * 60 * 1000) {
-            catchUpQueue.push(jid)
-          }
-        }
       }
     }
 
@@ -788,26 +769,59 @@ async function connectSession(
 }
 
 // ── Catch-up: fetch messages missed while offline ─────────────────────────────
-// Runs 10 s after each successful connect. Compares WA's conversation timestamps
-// (available in chats.upsert) with our local DB. For any chat that is ahead of
-// our DB, requests up to 50 recent messages from WA via fetchMessageHistory.
-// The response arrives via messaging-history.set which our existing handler saves.
+// Runs 30s after each successful connect (giving chats.upsert time to settle).
+// Scans ALL contacts active in the last 30 days directly from the DB — does not
+// depend on chats.upsert populating a queue, so it catches every gap regardless
+// of what WA announced at connect time.
 
 async function catchUpMissingMessages(
   session: BaileysSession,
   db: BetterSQLite3Database<typeof schema>,
-  win: BrowserWindow,
-  jids: string[]
+  win: BrowserWindow
 ) {
-  if (!session.sock || session.status !== 'connected' || jids.length === 0) return
+  if (!session.sock || session.status !== 'connected') return
 
-  console.log(`[baileys][account ${session.accountId}] catch-up: requesting history for ${jids.length} contacts with gaps`)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const twoMinutes = 2 * 60 * 1000
+
+  // Find all contacts active in the last 30 days whose latest stored message
+  // is more than 2 minutes behind their lastMessageAt (gap detected).
+  const candidates = db.select({
+    id: schema.contacts.id,
+    whatsappId: schema.contacts.whatsappId,
+    lastMessageAt: schema.contacts.lastMessageAt,
+  })
+    .from(schema.contacts)
+    .where(gte(schema.contacts.lastMessageAt, thirtyDaysAgo))
+    .all()
+
+  const jidsWithGaps: string[] = []
+  for (const contact of candidates) {
+    const [latestMsg] = db.select({ timestamp: schema.messages.timestamp })
+      .from(schema.messages)
+      .where(eq(schema.messages.contactId, contact.id))
+      .orderBy(desc(schema.messages.timestamp))
+      .limit(1)
+      .all()
+
+    const ourLatest = latestMsg?.timestamp?.getTime() ?? 0
+    const waLatest = contact.lastMessageAt?.getTime() ?? 0
+    if (waLatest - ourLatest > twoMinutes) {
+      jidsWithGaps.push(contact.whatsappId)
+    }
+  }
+
+  if (jidsWithGaps.length === 0) {
+    console.log(`[baileys][account ${session.accountId}] catch-up: no gaps detected`)
+    return
+  }
+
+  console.log(`[baileys][account ${session.accountId}] catch-up: ${jidsWithGaps.length} contacts with gaps`)
   let fetched = 0
 
-  for (const jid of jids) {
+  for (const jid of jidsWithGaps) {
     if (!session.sock || session.status !== 'connected') break
 
-    // Find the contact and their latest stored message to use as cursor
     const [contact] = db.select({ id: schema.contacts.id })
       .from(schema.contacts)
       .where(eq(schema.contacts.whatsappId, jid))
@@ -815,9 +829,8 @@ async function catchUpMissingMessages(
     if (!contact) continue
 
     const [latestMsg] = db.select({
-      whatsappMsgId: schema.messages.whatsappMsgId,
       direction: schema.messages.direction,
-      timestamp: schema.messages.timestamp
+      timestamp: schema.messages.timestamp,
     })
       .from(schema.messages)
       .where(eq(schema.messages.contactId, contact.id))
@@ -826,8 +839,6 @@ async function catchUpMissingMessages(
       .all()
 
     try {
-      // Pass empty id so WA returns the most recent messages for this chat.
-      // The response arrives via messaging-history.set which our handler saves.
       const cursor = latestMsg
         ? { id: '', remoteJid: jid, fromMe: latestMsg.direction === 'out' }
         : { id: '', remoteJid: jid, fromMe: false }
@@ -838,7 +849,7 @@ async function catchUpMissingMessages(
       // best effort — skip this JID
     }
 
-    // Pace requests to avoid rate-limiting (WA allows ~3-4/s)
+    // Pace requests to avoid WA rate-limiting (~3-4/s max)
     await new Promise(resolve => setTimeout(resolve, 400))
   }
 
