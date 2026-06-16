@@ -33,6 +33,7 @@ jobs:
           name: mac-dist
           path: |
             dist/*.dmg
+            dist/*.zip
             dist/*.blockmap
             dist/latest-mac.yml
 
