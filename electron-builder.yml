@@ -25,6 +25,9 @@ extraResources:
 
 # ── macOS ──────────────────────────────────────────────────────────────────────
 mac:
+  # Explicit artifact name so latest-mac.yml and the actual files always match.
+  # Without this, electron-builder uses dashes in the YML but dots on disk → 404.
+  artifactName: WA.Copilot-${version}-${arch}.${ext}
   # Universal covers both Apple Silicon (M1/M2/M3) and Intel Macs
   target:
     - target: dmg
