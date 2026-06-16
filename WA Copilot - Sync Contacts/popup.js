@@ -116,21 +116,18 @@ btn.addEventListener('click', async () => {
 
     status.textContent = 'Leyendo contactos…'
 
-    // executeScript returns the value directly — no message channel, no timeout
-    let results
-    try {
-      results = await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: readWAContactsForCRM,
+    // Ask the content script (already injected into the WA Web tab) to read IndexedDB.
+    // This avoids the executeScript host-permission requirement entirely.
+    const result = await new Promise((resolve) => {
+      chrome.tabs.sendMessage(tab.id, { action: 'sync' }, (res) => {
+        if (chrome.runtime.lastError) {
+          resolve({ ok: false, message: 'Recargá WhatsApp Web e intentá de nuevo.' })
+        } else {
+          resolve(res ?? { ok: false, message: 'Sin respuesta del contenido.' })
+        }
       })
-    } catch (e) {
-      status.className = 'err'
-      status.textContent = 'Error al leer contactos: ' + e.message
-      btn.disabled = false
-      return
-    }
+    })
 
-    const result = results?.[0]?.result
     if (!result) {
       status.className = 'err'
       status.textContent = 'Sin respuesta — recargá WhatsApp Web e intentá de nuevo.'

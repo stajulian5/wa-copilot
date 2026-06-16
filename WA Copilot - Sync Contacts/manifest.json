@@ -2,12 +2,19 @@
   "manifest_version": 3,
   "name": "WA Copilot — Sync Contacts",
   "short_name": "WA Copilot",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Syncs your WhatsApp contact names into the WA Copilot desktop app so your brokers appear by name instead of phone number.",
   "permissions": ["tabs", "scripting"],
   "host_permissions": [
     "https://web.whatsapp.com/*",
     "http://127.0.0.1/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://web.whatsapp.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
   ],
   "action": {
     "default_popup": "popup.html",

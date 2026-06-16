@@ -73,25 +73,24 @@ async function readWAMessages(lookbackDays = LOOKBACK_BACKGROUND_DAYS) {
       if (rows.length > 0) break
     }
   }
-    .map(m => {
-      const id = m.id?._serialized ?? m.id ?? m.key?.id ?? null
-      const jid = m.id?.remote ?? m.chatId ?? m.key?.remoteJid ?? null
-      if (!id || !jid) return null
 
-      const ts = (m.t ?? m.timestamp ?? m.msgTimestamp ?? 0) * 1000
-      const body = m.body ?? m.caption ?? m.text ?? null
-      const fromMe = m.id?.fromMe ?? m.fromMe ?? false
-      const type = m.type ?? 'chat'
-      const isGroup = jid.endsWith('@g.us')
-      const pushName = m.notifyName ?? m.pushName ?? m.senderName ?? null
+  return rows.map(m => {
+    const id = m.id?._serialized ?? m.id ?? m.key?.id ?? null
+    const jid = m.id?.remote ?? m.chatId ?? m.key?.remoteJid ?? null
+    if (!id || !jid) return null
 
-      // Skip protocol/system messages
-      if (['protocol', 'notification', 'notification_template', 'e2e_notification',
-           'gp2', 'broadcast', 'call_log'].includes(type)) return null
+    const ts = (m.t ?? m.timestamp ?? m.msgTimestamp ?? 0) * 1000
+    const body = m.body ?? m.caption ?? m.text ?? null
+    const fromMe = m.id?.fromMe ?? m.fromMe ?? false
+    const type = m.type ?? 'chat'
+    const isGroup = jid.endsWith('@g.us')
+    const pushName = m.notifyName ?? m.pushName ?? m.senderName ?? null
 
-      return { id, jid, body, timestamp: ts, fromMe, type, pushName, isGroup }
-    })
-    .filter(Boolean)
+    if (['protocol', 'notification', 'notification_template', 'e2e_notification',
+         'gp2', 'broadcast', 'call_log'].includes(type)) return null
+
+    return { id, jid, body, timestamp: ts, fromMe, type, pushName, isGroup }
+  }).filter(Boolean)
 }
 
 // lookbackDays: pass LOOKBACK_BACKGROUND_DAYS for routine sync,
