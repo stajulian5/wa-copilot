@@ -1067,9 +1067,14 @@ async function upsertMessage(
   } else {
     const unreadDelta = isOutgoing ? 0 : 1
     const nameUpdate = (!contact.name && pushName) ? { name: pushName } : {}
+    // Inbound message on a resolved contact → move it back to New automatically
+    const reopenUpdate = (!isOutgoing && contact.stage === 'all_resolved')
+      ? { stage: 'new' as const, stageChangedAt: new Date() }
+      : {}
     db.update(schema.contacts)
       .set({
         ...nameUpdate,
+        ...reopenUpdate,
         lastMessage: body,
         lastMessageAt: new Date(timestamp),
         lastMessageDirection: isOutgoing ? 'out' : 'in',
