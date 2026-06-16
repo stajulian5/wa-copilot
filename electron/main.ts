@@ -269,11 +269,8 @@ function setupAutoUpdater(win: BrowserWindow) {
   })
 
   autoUpdater.on('update-downloaded', (info) => {
-    console.log(`[updater] v${info.version} downloaded — source: ${updateSource}`)
-
-    // Always auto-install: restart silently and relaunch immediately
-    console.log(`[updater] v${info.version} ready — restarting automatically (source: ${updateSource})`)
-    autoUpdater.quitAndInstall(true, true)
+    console.log(`[updater] v${info.version} downloaded — notifying renderer`)
+    win.webContents.send('app:updateReady', { version: info.version })
   })
 
   autoUpdater.on('error', (err) => {

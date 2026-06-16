@@ -3,6 +3,7 @@ import { OnboardingPage } from './pages/OnboardingPage'
 import { KanbanPage } from './pages/KanbanPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { AddAccountModal } from './components/AddAccountModal'
+import { UpdateBanner } from './components/UpdateBanner'
 import { useContactsStore } from './stores/contactsStore'
 import { useRemindersStore } from './stores/remindersStore'
 import { useWhatsApp } from './hooks/useWhatsApp'
@@ -179,6 +180,14 @@ export default function App() {
         />
       )}
 
+
+      {updateInfo && (
+        <UpdateBanner
+          version={updateInfo.version}
+          onUpdate={() => window.api.restartAndInstall()}
+          onDismiss={() => setUpdateInfo(null)}
+        />
+      )}
 
       <KanbanPage
         waStatus={waStatus}
