@@ -116,17 +116,30 @@ btn.addEventListener('click', async () => {
 
     status.textContent = 'Leyendo contactos…'
 
-    // Ask the content script (already injected into the WA Web tab) to read IndexedDB.
-    // This avoids the executeScript host-permission requirement entirely.
-    const result = await new Promise((resolve) => {
+    // Try content script message first (fast path — content script already running).
+    // If the content script isn't injected yet, fall back to executeScript directly.
+    let result = await new Promise((resolve) => {
       chrome.tabs.sendMessage(tab.id, { action: 'sync' }, (res) => {
-        if (chrome.runtime.lastError) {
-          resolve({ ok: false, message: 'Recargá WhatsApp Web e intentá de nuevo.' })
-        } else {
-          resolve(res ?? { ok: false, message: 'Sin respuesta del contenido.' })
-        }
+        if (chrome.runtime.lastError || !res) resolve(null)
+        else resolve(res)
       })
     })
+
+    if (!result) {
+      // Content script not running — inject the reader function directly.
+      try {
+        const [{ result: r }] = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: readWAContactsForCRM,
+        })
+        result = r
+      } catch (e) {
+        status.className = 'err'
+        status.textContent = 'Error al leer contactos: ' + e.message
+        btn.disabled = false
+        return
+      }
+    }
 
     if (!result) {
       status.className = 'err'
