@@ -104,109 +104,30 @@ btn.addEventListener('click', async () => {
   status.className = ''
   status.textContent = 'Buscando WhatsApp Web…'
 
-  try {
-    const [tab] = await chrome.tabs.query({ url: 'https://web.whatsapp.com/*' })
-
-    if (!tab) {
-      status.className = 'err'
-      status.textContent = 'Abrí web.whatsapp.com en Chrome primero.'
-      btn.disabled = false
-      return
-    }
-
-    status.textContent = 'Leyendo contactos…'
-
-    // Try content script message first (fast path — content script already running).
-    // If the content script isn't injected yet, fall back to executeScript directly.
-    let result = await new Promise((resolve) => {
-      chrome.tabs.sendMessage(tab.id, { action: 'sync' }, (res) => {
-        if (chrome.runtime.lastError || !res) resolve(null)
-        else resolve(res)
-      })
-    })
-
-    if (!result) {
-      // Content script not running — inject the reader function directly.
-      try {
-        const [{ result: r }] = await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: readWAContactsForCRM,
-        })
-        result = r
-      } catch (e) {
-        status.className = 'err'
-        status.textContent = 'Error al leer contactos: ' + e.message
-        btn.disabled = false
-        return
-      }
-    }
-
-    if (!result) {
-      status.className = 'err'
-      status.textContent = 'Sin respuesta — recargá WhatsApp Web e intentá de nuevo.'
-      btn.disabled = false
-      return
-    }
-
-    if (!result.ok) {
-      status.className = 'err'
-      status.textContent = result.message
-      btn.disabled = false
-      return
-    }
-
-    status.textContent = `Enviando ${result.payload.length} contactos al CRM…`
-
-    let serverRes
-    try {
-      serverRes = await fetch('http://127.0.0.1:3847/contacts/sync-wa-web', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result.payload)
-      })
-    } catch (e) {
-      status.className = 'err'
-      status.textContent = 'No se pudo conectar con Mica CRM. ¿Está abierta la app?'
-      btn.disabled = false
-      return
-    }
-
-    const text = await serverRes.text()
-    let data
-    try { data = JSON.parse(text) } catch {
-      status.className = 'err'
-      status.textContent = `Error del servidor (${serverRes.status}): ${text.slice(0, 120)}`
-      btn.disabled = false
-      return
-    }
-
-    if (!data.ok) {
-      status.className = 'err'
-      status.textContent = `Error: ${data.error ?? 'desconocido'}`
-      btn.disabled = false
-      return
-    }
-
-    // Also sync messages in the background
-    status.textContent = `✓ ${data.updated} contactos · sincronizando mensajes…`
-
-    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-      if (!tabs[0]?.id) return
-      chrome.tabs.sendMessage(tabs[0].id, { action: 'syncMessages' }, (msgRes) => {
-        if (chrome.runtime.lastError) return
-        if (msgRes?.synced > 0) {
-          status.textContent = `✓ ${data.updated} contactos · ${msgRes.synced} mensajes nuevos sincronizados`
-        } else {
-          status.textContent = `✓ ${data.updated} contactos actualizados · mensajes al día`
-        }
-      })
-    })
-  } catch (err) {
+  const [tab] = await chrome.tabs.query({ url: 'https://web.whatsapp.com/*' })
+  if (!tab) {
     status.className = 'err'
-    status.textContent = err.message
+    status.textContent = 'Abrí web.whatsapp.com en Chrome primero.'
+    btn.disabled = false
+    return
   }
 
-  btn.disabled = false
+  // Ask the content script to run a full sync (contacts + messages).
+  // The content script is auto-injected by Chrome on web.whatsapp.com — no
+  // executeScript or host-permission approval needed from the popup side.
+  status.textContent = 'Sincronizando…'
+  chrome.tabs.sendMessage(tab.id, { action: 'fullSync' }, (res) => {
+    if (chrome.runtime.lastError || !res) {
+      status.className = 'err'
+      status.textContent = 'Recargá la pestaña de WhatsApp Web e intentá de nuevo.'
+    } else if (!res.ok) {
+      status.className = 'err'
+      status.textContent = res.message ?? 'Error desconocido.'
+    } else {
+      status.textContent = `✓ ${res.contacts} contactos · ${res.messages} mensajes nuevos`
+    }
+    btn.disabled = false
+  })
 })
 
 // Heartbeat — tell WA Copilot this extension is active

@@ -114,6 +114,64 @@ async function postMessagesToServer(port, lookbackDays = LOOKBACK_BACKGROUND_DAY
   }
 }
 
+// ── Contact sync: build payload and POST to server ───────────────────────────
+async function postContactsToServer(port) {
+  try {
+    const { contacts, lidNames, lidPns } = await readWAContacts()
+
+    const lidNameMap = buildLidMap(lidNames, ['lid','id','key'], ['displayName','name','pushName','notify'])
+    const lidPhoneMap = buildLidMap(lidPns,   ['lid','id','key'], ['pn','phone','phoneNumber','number'])
+    const WA_PLACEHOLDERS = new Set([
+      'Contacto WA','WhatsApp Contact','WhatsApp-Kontakt',
+      'Contact WhatsApp','Contatto WhatsApp','Contato WA',
+    ])
+
+    const payload = []
+    for (const c of contacts) {
+      const id = c.id ?? c.__x_id ?? null
+      if (!id) continue
+      const isLid = id.endsWith('@lid')
+      const lidNum = isLid ? id.replace('@lid', '') : null
+
+      let name = null
+      for (const f of ['name','notify','pushname','pushName','verifiedName','shortName','short']) {
+        if (c[f] && !WA_PLACEHOLDERS.has(c[f])) { name = c[f]; break }
+      }
+      if (!name && isLid) name = lidNameMap[id] ?? lidNameMap[lidNum] ?? null
+
+      let resolvedPhone = null
+      if (isLid) {
+        const direct = c.pn ?? c.phone ?? c.phoneNumber ?? c.number ?? null
+        const d = digitsOnly(direct)
+        if (d && d.length >= 8 && d.length <= 15) resolvedPhone = d
+        if (!resolvedPhone) {
+          const mapped = lidPhoneMap[id] ?? lidPhoneMap[lidNum] ?? null
+          const m = digitsOnly(mapped)
+          if (m && m.length >= 8 && m.length <= 15) resolvedPhone = m
+        }
+      }
+
+      if (!name && !resolvedPhone) continue
+      const entry = { id }
+      if (name) entry.name = name
+      if (resolvedPhone) entry.phone = resolvedPhone
+      payload.push(entry)
+    }
+
+    if (payload.length === 0) return
+
+    const res = await fetch(`http://127.0.0.1:${port}/contacts/sync-wa-web`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    const data = await res.json()
+    console.log(`[WA Copilot] contact sync: ${data.updated ?? 0} updated`)
+  } catch (err) {
+    console.warn('[WA Copilot] contact sync failed:', err.message)
+  }
+}
+
 // ── Background auto-sync every 2 minutes ─────────────────────────────────────
 // Runs silently while WhatsApp Web tab is open. Ensures any message that
 // Baileys missed (zombie gap, offline batch overflow) gets captured via
@@ -134,9 +192,8 @@ async function findCopilotPort() {
 async function runBackgroundSync() {
   const port = await findCopilotPort()
   if (!port) return   // WA Copilot not running — skip silently
-  // Heartbeat
   fetch(`http://127.0.0.1:${port}/extension/ping`, { method: 'POST' }).catch(() => {})
-  // Message sync
+  await postContactsToServer(port)
   await postMessagesToServer(port)
 }
 
@@ -149,6 +206,18 @@ findCopilotPort().then(port => {
 
 // ── Message listener from popup ───────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg.action === 'fullSync') {
+    ;(async () => {
+      const port = await findCopilotPort()
+      if (!port) { sendResponse({ ok: false, message: 'WA Copilot no está abierto.' }); return }
+      await postContactsToServer(port)
+      const { synced } = await postMessagesToServer(port, LOOKBACK_MANUAL_DAYS)
+      // Re-read updated count from last contact sync (best-effort)
+      sendResponse({ ok: true, contacts: '✓', messages: synced })
+    })()
+    return true
+  }
+
   if (msg.action === 'syncMessages') {
     // Popup-triggered sync uses the wider 30-day window for deeper recovery
     ;(async () => {
