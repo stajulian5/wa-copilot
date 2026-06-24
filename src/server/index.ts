@@ -103,6 +103,14 @@ export async function startServer(db: BetterSQLite3Database<typeof schema>, user
       server.listen(port, '127.0.0.1', () => {
         const actualPort = (server.address() as any).port as number
         ipcMain.handle('server:port', () => actualPort)
+
+        // Auto-sync Atlas sheet on startup (60s delay to let WA connect first)
+        // then every 30 minutes. Silently skips if no sheet URL is configured.
+        const runSheetsSync = () =>
+          fetch(`http://127.0.0.1:${actualPort}/sheets/sync`, { method: 'POST' }).catch(() => {})
+        setTimeout(runSheetsSync, 60_000)
+        setInterval(runSheetsSync, 30 * 60 * 1000)
+
         resolve(actualPort)
       })
     }

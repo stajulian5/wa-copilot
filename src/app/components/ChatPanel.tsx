@@ -103,6 +103,7 @@ export function ChatPanel({ contactId, onClose }: Props) {
   const [hasMore, setHasMore] = useState(true)
   const [showAI, setShowAI] = useState(false)
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null)
+  const [aiSuggestionId, setAiSuggestionId] = useState<number | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [showSnooze, setShowSnooze] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
@@ -162,7 +163,7 @@ export function ChatPanel({ contactId, onClose }: Props) {
         onClose(); return
       }
       if (e.metaKey && e.key === 'n') { e.preventDefault(); setShowSnooze(true) }
-      if (e.metaKey && e.key === 'Enter' && aiSuggestion) { e.preventDefault(); sendText(aiSuggestion); setAiSuggestion(null) }
+      if (e.metaKey && e.key === 'Enter' && aiSuggestion) { e.preventDefault(); logAIOutcome('sent'); sendText(aiSuggestion); setAiSuggestion(null) }
       if (e.metaKey && e.key === 'f') { e.preventDefault(); setShowSearch(v => !v); setTimeout(() => searchInputRef.current?.focus(), 50) }
     }
     window.addEventListener('keydown', handler)
@@ -248,8 +249,20 @@ export function ChatPanel({ contactId, onClose }: Props) {
     })
     const data = await r.json()
     setAiLoading(false)
-    if (data.suggestion) setAiSuggestion(data.suggestion)
-    else if (data.error === 'NO_API_KEY') alert('Configura tu clave API de Anthropic en Ajustes.')
+    if (data.suggestion) {
+      setAiSuggestion(data.suggestion)
+      setAiSuggestionId(data.suggestionId ?? null)
+    } else if (data.error === 'NO_API_KEY') alert('Configura tu clave API de Anthropic en Ajustes.')
+  }
+
+  const logAIOutcome = (outcome: 'sent' | 'edited' | 'dismissed', editedText?: string) => {
+    if (!aiSuggestionId) return
+    fetch(`http://127.0.0.1:${PORT()}/ai/outcome`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ suggestionId: aiSuggestionId, outcome, editedText })
+    }).catch(() => {})
+    setAiSuggestionId(null)
   }
 
   const saveNotes = () => {
@@ -402,9 +415,9 @@ export function ChatPanel({ contactId, onClose }: Props) {
             <AISuggestion
               suggestion={aiSuggestion}
               loading={aiLoading}
-              onEdit={text => { setInput(text); setShowAI(false); setAiSuggestion(null); inputRef.current?.focus() }}
-              onSend={text => { sendText(text); setShowAI(false) }}
-              onDismiss={() => { setShowAI(false); setAiSuggestion(null) }}
+              onEdit={text => { logAIOutcome('edited', text); setInput(text); setShowAI(false); setAiSuggestion(null); inputRef.current?.focus() }}
+              onSend={text => { logAIOutcome('sent'); sendText(text); setShowAI(false) }}
+              onDismiss={() => { logAIOutcome('dismissed'); setShowAI(false); setAiSuggestion(null) }}
             />
           )}
 

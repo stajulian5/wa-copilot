@@ -12,7 +12,7 @@ const db = (req: any): BetterSQLite3Database<typeof schema> => req.db
 
 const KEYCHAIN_SERVICE = 'MicaCRM'
 const KEYCHAIN_ACCOUNT = 'anthropic-api-key'
-const MODEL = 'claude-haiku-4-5-20251001'
+const MODEL = 'claude-haiku-4-5'
 
 const SYSTEM_PROMPT = `Eres el asistente de un KAM (Key Account Manager) de Mica, empresa mexicana de PropTech que ofrece Protección de Renta a agentes inmobiliarios.
 
@@ -142,11 +142,30 @@ aiRouter.post('/suggest', async (req, res) => {
         .run()
     }
 
-    res.json({ suggestion })
+    const [logged] = db(req)
+      .insert(schema.aiSuggestions)
+      .values({ contactId, suggestion })
+      .returning()
+      .all()
+
+    res.json({ suggestion, suggestionId: logged.id })
   } catch (err: any) {
     console.error('AI error:', err)
     res.status(500).json({ error: err.message ?? 'AI request failed' })
   }
+})
+
+// POST /ai/outcome — record what the user did with a suggestion
+// Body: { suggestionId, outcome: 'sent' | 'edited' | 'dismissed', editedText? }
+aiRouter.post('/outcome', (req, res) => {
+  const { suggestionId, outcome, editedText } = req.body
+  if (!suggestionId || !outcome) return res.status(400).json({ error: 'suggestionId and outcome required' })
+  db(req)
+    .update(schema.aiSuggestions)
+    .set({ outcome, editedText: editedText ?? null, resolvedAt: new Date() })
+    .where(eq(schema.aiSuggestions.id, suggestionId))
+    .run()
+  res.json({ ok: true })
 })
 
 // POST /ai/summarize

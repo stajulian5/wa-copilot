@@ -135,6 +135,18 @@ export const settings = sqliteTable('settings', {
   value: text('value').notNull()
 })
 
+// ─── ai_suggestions ──────────────────────────────────────────────────────────
+
+export const aiSuggestions = sqliteTable('ai_suggestions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  contactId: integer('contact_id').notNull().references(() => contacts.id),
+  suggestion: text('suggestion').notNull(),
+  outcome: text('outcome', { enum: ['sent', 'edited', 'dismissed'] }),
+  editedText: text('edited_text'),  // actual text sent when outcome is 'edited'
+  generatedAt: integer('generated_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+  resolvedAt: integer('resolved_at', { mode: 'timestamp_ms' }),
+})
+
 // ─── api_usage ───────────────────────────────────────────────────────────────
 
 export const apiUsage = sqliteTable('api_usage', {
@@ -159,3 +171,4 @@ export type KanbanColumnRow = typeof kanbanColumns.$inferSelect
 export type InsertKanbanColumn = typeof kanbanColumns.$inferInsert
 export type Template = typeof templates.$inferSelect
 export type Setting = typeof settings.$inferSelect
+export type AISuggestion = typeof aiSuggestions.$inferSelect

@@ -57,34 +57,34 @@ export function StatsBar() {
   return (
     <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 bg-white overflow-x-auto shrink-0">
       <StatPill
-        label="Unanswered"
+        label="Sin respuesta"
         value={stats.unanswered}
         alert={stats.unanswered > 0}
       />
       <StatPill
-        label="Avg response"
+        label="Resp. promedio"
         value={fmtMinutes(stats.avg_response_minutes)}
-        sub="7-day"
+        sub="7 días"
       />
       <StatPill
-        label="Oldest wait"
+        label="Espera más larga"
         value={fmtMinutes(stats.oldest_unanswered_minutes)}
         alert={(stats.oldest_unanswered_minutes ?? 0) > 120}
       />
       <StatPill
-        label="Open"
+        label="En conversación"
         value={stats.open_conversations}
       />
       <StatPill
-        label="Waiting for"
+        label="En espera"
         value={stats.waiting_for}
       />
       <StatPill
-        label="Resolved today"
+        label="Resueltos hoy"
         value={stats.resolved_today}
       />
       <StatPill
-        label="New today"
+        label="Nuevos hoy"
         value={stats.new_today}
       />
     </div>
