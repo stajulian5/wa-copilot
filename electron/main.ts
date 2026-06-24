@@ -250,6 +250,8 @@ function setupAutoUpdater(win: BrowserWindow) {
   autoUpdater.autoDownload = false
   // Install on quit if update is downloaded but user hasn't restarted yet
   autoUpdater.autoInstallOnAppQuit = true
+  // Bypass GitHub CDN cache so latest-mac.yml is always fresh
+  autoUpdater.requestHeaders = { 'Cache-Control': 'no-cache' }
 
   let updateSource: 'startup' | 'scheduled' = 'startup'
 

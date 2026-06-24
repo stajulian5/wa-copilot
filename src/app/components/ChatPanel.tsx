@@ -119,26 +119,34 @@ export function ChatPanel({ contactId, onClose }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  // Load initial messages + mark read
-  useEffect(() => {
-    setHasMore(true) // reset on contact switch
-    if (!messages.length) {
+  const loadMessages = (forceRefresh = false) => {
+    if (!messages.length || forceRefresh) {
       fetch(`http://127.0.0.1:${PORT()}/messages/${contactId}`)
         .then(r => r.json())
         .then((msgs: Message[]) => {
           setMessages(contactId, msgs)
-          // If we got fewer than a full page, there's nothing older in the DB
-          if (msgs.length < 20) setHasMore(false)
+          setHasMore(msgs.length >= 20)
         })
     } else {
-      // Messages already cached — check if there could be older ones
       if (messages.length < 20) setHasMore(false)
     }
+  }
+
+  // Load initial messages + mark read
+  useEffect(() => {
+    setHasMore(true) // reset on contact switch
+    loadMessages()
     fetch(`http://127.0.0.1:${PORT()}/contacts/${contactId}/read`, { method: 'POST' })
     updateContact(contactId, { unreadCount: 0 })
 
     // Focus the message input so the user can start typing immediately
     inputRef.current?.focus()
+  }, [contactId])
+
+  // When history sync finishes (catch-up, profile pics), reload messages for this chat
+  useEffect(() => {
+    const off = window.api.onHistorySynced(() => loadMessages(true))
+    return off
   }, [contactId])
 
   // Scroll to bottom on new messages

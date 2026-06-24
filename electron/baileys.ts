@@ -9,7 +9,7 @@ import {
 import { BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { rmSync, existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs'
-import { eq, desc, gte } from 'drizzle-orm'
+import { eq, desc } from 'drizzle-orm'
 import * as schema from '../src/server/db/schema'
 import { userData } from './main'
 import { waMessenger } from '../src/server/waMessenger'
@@ -24,6 +24,7 @@ interface BaileysSession {
   status: 'disconnected' | 'connecting' | 'connected'
   reconnectAttempts: number
   keepaliveTimer: ReturnType<typeof setInterval> | null
+  catchUpJids: Set<string>   // JIDs detected as having gaps during chats.upsert
 }
 
 const sessions = new Map<number, BaileysSession>()
@@ -213,7 +214,8 @@ export async function startBaileys(
       sock: null,
       status: 'disconnected',
       reconnectAttempts: 0,
-      keepaliveTimer: null
+      keepaliveTimer: null,
+      catchUpJids: new Set()
     }
     sessions.set(newAccount.id, session)
     connectSession(session, db, win)
@@ -365,7 +367,8 @@ export async function startBaileys(
       sock: null,
       status: 'disconnected',
       reconnectAttempts: 0,
-      keepaliveTimer: null
+      keepaliveTimer: null,
+      catchUpJids: new Set()
     }
     sessions.set(account.id, session)
   }
@@ -671,6 +674,22 @@ async function connectSession(
         const waUnread = (chat as any).unreadCount
         const unreadUpdate = (waUnread != null) ? { unreadCount: Math.max(0, Number(waUnread)) } : {}
         const needsUpdate = (chatName && !existing.name) || isNewer || (chatLastMsg && !existing.lastMessage) || waUnread != null
+
+        // Detect gap BEFORE writing lastMessageAt: WA says chat is newer than our latest stored message
+        if (isNewer && chatTs) {
+          const [latestMsg] = db.select({ timestamp: schema.messages.timestamp })
+            .from(schema.messages)
+            .where(eq(schema.messages.contactId, existing.id))
+            .orderBy(desc(schema.messages.timestamp))
+            .limit(1)
+            .all()
+          const ourLatest = latestMsg?.timestamp?.getTime() ?? 0
+          const twoMinutes = 2 * 60 * 1000
+          if (chatTs - ourLatest > twoMinutes) {
+            session.catchUpJids.add(jid)
+          }
+        }
+
         if (needsUpdate) {
           db.update(schema.contacts).set({
             ...(chatName && !existing.name ? { name: chatName } : {}),
@@ -781,35 +800,10 @@ async function catchUpMissingMessages(
 ) {
   if (!session.sock || session.status !== 'connected') return
 
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-  const twoMinutes = 2 * 60 * 1000
-
-  // Find all contacts active in the last 30 days whose latest stored message
-  // is more than 2 minutes behind their lastMessageAt (gap detected).
-  const candidates = db.select({
-    id: schema.contacts.id,
-    whatsappId: schema.contacts.whatsappId,
-    lastMessageAt: schema.contacts.lastMessageAt,
-  })
-    .from(schema.contacts)
-    .where(gte(schema.contacts.lastMessageAt, thirtyDaysAgo))
-    .all()
-
-  const jidsWithGaps: string[] = []
-  for (const contact of candidates) {
-    const [latestMsg] = db.select({ timestamp: schema.messages.timestamp })
-      .from(schema.messages)
-      .where(eq(schema.messages.contactId, contact.id))
-      .orderBy(desc(schema.messages.timestamp))
-      .limit(1)
-      .all()
-
-    const ourLatest = latestMsg?.timestamp?.getTime() ?? 0
-    const waLatest = contact.lastMessageAt?.getTime() ?? 0
-    if (waLatest - ourLatest > twoMinutes) {
-      jidsWithGaps.push(contact.whatsappId)
-    }
-  }
+  // Use JIDs flagged during chats.upsert (gap detected before lastMessageAt was written).
+  // This avoids the race where chats.upsert updates lastMessageAt first, making gaps appear zero.
+  const jidsWithGaps: string[] = Array.from(session.catchUpJids)
+  session.catchUpJids.clear()
 
   if (jidsWithGaps.length === 0) {
     console.log(`[baileys][account ${session.accountId}] catch-up: no gaps detected`)
@@ -1086,7 +1080,7 @@ async function upsertMessage(
       .set({
         ...nameUpdate,
         ...reopenUpdate,
-        lastMessage: body,
+        ...(body ? { lastMessage: body } : {}),
         lastMessageAt: new Date(timestamp),
         lastMessageDirection: isOutgoing ? 'out' : 'in',
         lastMessageSenderName: isGroup ? (isOutgoing ? 'Tú' : senderName) : null,
